@@ -1,9 +1,15 @@
 'use client';
 
-import React, { useState, useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useRef, useImperativeHandle, forwardRef, useEffect, createContext, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { wingShackTheme } from '@/theme/wingShackTheme';
+import { GameLifecycle } from '@/types/game-lifecycle';
+
+// Context for passing sound state to games
+const GameShellContext = createContext<{ soundEnabled: boolean }>({ soundEnabled: true });
+
+export const useGameShellContext = () => useContext(GameShellContext);
 
 export interface GameShellProps {
   title: string;
@@ -44,6 +50,26 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
     const [soundEnabled, setSoundEnabled] = useState(initialSoundEnabled);
     const [showHowToPlay, setShowHowToPlay] = useState(false);
     const gameStateRef = useRef({ isPlaying, isPaused });
+    const gameContentRef = useRef<HTMLDivElement>(null);
+    const gameLifecycleRef = useRef<GameLifecycle | null>(null);
+
+    // Find game lifecycle from children
+    useEffect(() => {
+      const findGameLifecycle = () => {
+        if (gameContentRef.current) {
+          const lifecycleElement = gameContentRef.current.querySelector('[data-game-lifecycle="true"]') as any;
+          if (lifecycleElement && lifecycleElement.__gameLifecycle) {
+            gameLifecycleRef.current = lifecycleElement.__gameLifecycle;
+          }
+        }
+      };
+
+      // Try to find lifecycle after a short delay to allow children to mount
+      const timeoutId = setTimeout(findGameLifecycle, 100);
+      findGameLifecycle(); // Also try immediately
+
+      return () => clearTimeout(timeoutId);
+    }, [children]);
 
     // Update ref when state changes
     gameStateRef.current = { isPlaying, isPaused };
@@ -77,21 +103,42 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
     const handleStart = () => {
       setIsPlaying(true);
       setIsPaused(false);
+      // Call game's lifecycle method if available
+      if (gameLifecycleRef.current) {
+        gameLifecycleRef.current.start();
+      }
       onStart?.();
     };
 
     const handleReset = () => {
       setIsPlaying(false);
       setIsPaused(false);
+      // Call game's lifecycle method if available
+      if (gameLifecycleRef.current) {
+        gameLifecycleRef.current.reset();
+      }
       onReset?.();
     };
 
     const handlePause = () => {
       if (isPlaying && !isPaused) {
         setIsPaused(true);
+        // Call game's lifecycle method if available
+        if (gameLifecycleRef.current) {
+          gameLifecycleRef.current.pause();
+        }
         onPause?.();
       } else if (isPaused) {
         setIsPaused(false);
+        // Resume by calling start if game supports it
+        if (gameLifecycleRef.current) {
+          // Some games might have resume, but start works for most
+          if ('resume' in gameLifecycleRef.current && typeof gameLifecycleRef.current.resume === 'function') {
+            (gameLifecycleRef.current as any).resume();
+          } else {
+            gameLifecycleRef.current.start();
+          }
+        }
         onResume?.();
       }
     };
@@ -101,21 +148,22 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
     };
 
     return (
-      <div
-        className={`game-shell ${className}`}
-        style={{
-          position: 'relative',
-          width: '100%',
-          height: '100%',
-          backgroundColor: wingShackTheme.colors.backgroundCard,
-          borderRadius: wingShackTheme.borderRadius.lg,
-          overflow: 'hidden',
-          boxShadow: `0 10px 40px rgba(159, 8, 8, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1), 0 0 20px rgba(200, 88, 32, 0.1)`,
-          border: `1px solid rgba(159, 8, 8, 0.15)`,
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
+      <GameShellContext.Provider value={{ soundEnabled }}>
+        <div
+          className={`game-shell ${className}`}
+          style={{
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            backgroundColor: wingShackTheme.colors.backgroundCard,
+            borderRadius: wingShackTheme.borderRadius.lg,
+            overflow: 'hidden',
+            boxShadow: `0 10px 40px rgba(159, 8, 8, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1), 0 0 20px rgba(200, 88, 32, 0.1)`,
+            border: `1px solid rgba(159, 8, 8, 0.15)`,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
         {/* Header */}
         <div
           style={{
@@ -422,6 +470,7 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
 
           {/* Game Children */}
           <div
+            ref={gameContentRef}
             style={{
               width: '100%',
               height: '100%',
@@ -433,6 +482,7 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
           </div>
         </div>
       </div>
+      </GameShellContext.Provider>
     );
   }
 );

@@ -5,12 +5,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameLifecycle } from '@/hooks/useGameLifecycle';
 import GameLifecycleWrapper from '@/components/GameLifecycleWrapper';
 import { wingShackTheme } from '@/theme/wingShackTheme';
+import { useGameShellContext } from '@/components/GameShell';
 
 interface ThreeCupGameProps {
   onWin?: (won: boolean) => void;
 }
 
 const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
+  const { soundEnabled } = useGameShellContext();
   const [ballPosition, setBallPosition] = useState<number>(1); // 0, 1, or 2 - actual ball position
   const [cupPositions, setCupPositions] = useState<number[]>([0, 1, 2]); // Visual order of cups
   const [selectedCup, setSelectedCup] = useState<number | null>(null);
@@ -35,9 +37,9 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     setCupPositions([0, 1, 2]); // Reset to original order
     setBallPosition(ballPos);
 
-    // Start shuffle sound effect
+    // Start shuffle sound effect (only if sound is enabled)
     // Reset volume and ensure it's ready to play
-    if (shuffleAudioRef.current) {
+    if (shuffleAudioRef.current && soundEnabled) {
       try {
         shuffleAudioRef.current.volume = 0.7; // Reset volume
         shuffleAudioRef.current.loop = true;
@@ -103,8 +105,8 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     };
 
     const performSwap = (swapIndex: number) => {
-      // Handle audio fade-out near the end
-      if (shuffleAudioRef.current) {
+      // Handle audio fade-out near the end (only if sound is enabled)
+      if (shuffleAudioRef.current && soundEnabled) {
         const progress = swapIndex / sequence.length;
         
         if (progress >= fadeOutStart) {
@@ -156,13 +158,13 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
 
   // Shuffle animation with actual position swapping
   const shuffleCups = useCallback(() => {
-    if (isShuffling || showBallPlacement) return;
+    if (isShuffling || showBallPlacement || hasGuessed) return;
     
     // Randomize ball position
     const newPosition = Math.floor(Math.random() * 3);
     // Show placement animation first
     showPlacementAnimation(newPosition);
-  }, [isShuffling, showBallPlacement, showPlacementAnimation]);
+  }, [isShuffling, showBallPlacement, hasGuessed, showPlacementAnimation]);
 
   // Handle cup selection - need to check visual position vs actual ball position
   const handleCupClick = useCallback((visualIndex: number) => {
@@ -209,7 +211,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
   const lifecycle = useGameLifecycle({
     onReset: resetGame,
     onStart: () => {
-      if (!hasGuessed && !isShuffling) {
+      if (!hasGuessed && !isShuffling && !showBallPlacement) {
         shuffleCups();
       }
     },
@@ -221,6 +223,13 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
       }
       if (shuffleAnimationRef.current) {
         cancelAnimationFrame(shuffleAnimationRef.current);
+      }
+      setIsShuffling(false);
+    },
+    onResume: () => {
+      // Resume shuffling if it was in progress
+      if (!hasGuessed && !showBallPlacement) {
+        shuffleCups();
       }
     },
   });
