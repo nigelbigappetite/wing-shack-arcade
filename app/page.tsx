@@ -60,14 +60,13 @@ export default function Home() {
       >
         <GameCard
           elevated
-          glow
           style={{
             borderRadius: wingShackTheme.borderRadius.xl,
             padding: 'clamp(16px, 3vw, 32px)',
             textAlign: 'center',
           }}
         >
-          <WingShackLogo size="xl" showText={false} />
+          <WingShackLogo size="md" showText={false} />
           <h1
             style={{
               fontFamily: wingShackTheme.typography.fontFamily.display,
@@ -76,7 +75,7 @@ export default function Home() {
               color: wingShackTheme.colors.text,
               margin: 'clamp(12px, 2vw, 24px) 0 0 0',
               letterSpacing: 'clamp(2px, 0.5vw, 6px)',
-              textShadow: `0 4px 20px rgba(159, 8, 8, 0.4)`,
+              textShadow: `0 2px 8px rgba(0, 0, 0, 0.15)`,
             }}
           >
             ARCADE
@@ -134,7 +133,6 @@ export default function Home() {
                 <GameCard
                   hover
                   elevated
-                  glow
                   style={{
                     width: '100%',
                     height: '100%',
@@ -152,8 +150,8 @@ export default function Home() {
                     transform: hoveredGame === game.id ? 'translateY(-8px)' : 'translateY(0)',
                     boxShadow:
                       hoveredGame === game.id
-                        ? `0 20px 60px ${game.color}40, 0 0 30px ${game.color}30`
-                        : `0 10px 40px rgba(159, 8, 8, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1)`,
+                        ? `0 15px 40px rgba(0, 0, 0, 0.2), 0 5px 15px rgba(0, 0, 0, 0.1)`
+                        : `0 10px 30px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1)`,
                     boxSizing: 'border-box',
                   }}
                 >
