@@ -280,6 +280,7 @@ const ArcadeCoverflow: React.FC<ArcadeCoverflowProps> = ({
           cursor: isDragging ? 'grabbing' : 'grab',
           height: '100%',
           alignItems: 'center',
+          touchAction: 'none',
         }}
         drag="x"
         dragConstraints={{ left: -Infinity, right: Infinity }}
@@ -289,7 +290,6 @@ const ArcadeCoverflow: React.FC<ArcadeCoverflowProps> = ({
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         whileDrag={{ cursor: 'grabbing' }}
-        style={{ touchAction: 'pan-x' }}
         transition={{
           type: 'spring',
           stiffness: 400,
