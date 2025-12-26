@@ -262,12 +262,33 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     document.addEventListener('click', unlockAudio, { once: true });
     document.addEventListener('touchstart', unlockAudio, { once: true });
 
+    // Pause audio when page becomes hidden (user switches tabs, navigates away, etc.)
+    const handleVisibilityChange = () => {
+      if (document.hidden && shuffleAudioRef.current) {
+        shuffleAudioRef.current.pause();
+      }
+    };
+
+    // Pause audio when page is about to unload
+    const handleBeforeUnload = () => {
+      if (shuffleAudioRef.current) {
+        shuffleAudioRef.current.pause();
+        shuffleAudioRef.current.currentTime = 0;
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     // Cleanup on unmount
     return () => {
       document.removeEventListener('click', unlockAudio);
       document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       if (shuffleAudioRef.current) {
         shuffleAudioRef.current.pause();
+        shuffleAudioRef.current.currentTime = 0;
         shuffleAudioRef.current.src = '';
         shuffleAudioRef.current = null;
       }
