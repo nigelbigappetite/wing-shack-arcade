@@ -28,6 +28,15 @@ const games: Game[] = [
     icon: 'three-cup-logo',
     category: 'Arcade',
   },
+  {
+    id: 'wing-tap-frenzy',
+    title: 'Wing Tap Frenzy',
+    description: 'Tap as many wings as you can in 10 seconds!',
+    href: '/wing-tap-frenzy',
+    color: wingShackTheme.colors.secondary,
+    icon: '🍗',
+    category: 'Arcade',
+  },
 ];
 
 export default function Home() {
