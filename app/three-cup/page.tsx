@@ -35,27 +35,12 @@ export default function ThreeCupPage() {
         <div
           style={{
             display: 'flex',
-            flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 'clamp(8px, 2vw, 12px)',
             padding: 'clamp(8px, 2vw, 12px)',
           }}
         >
           <WingShackLogo size="sm" showText={false} />
-          <h1
-            style={{
-              fontFamily: wingShackTheme.typography.fontFamily.display,
-              fontSize: 'clamp(16px, 4vw, 22px)',
-              fontWeight: wingShackTheme.typography.fontWeight.bold,
-              color: wingShackTheme.colors.text,
-              margin: 0,
-              letterSpacing: '0.5px',
-              textShadow: `0 1px 4px rgba(159, 8, 8, 0.2)`,
-            }}
-          >
-            THREE CUP GAME
-          </h1>
         </div>
       </GameCard>
 
