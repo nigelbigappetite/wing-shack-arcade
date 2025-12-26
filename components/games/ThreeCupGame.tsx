@@ -406,24 +406,30 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
             width: '100%',
             maxWidth: '600px',
             position: 'relative',
+            minHeight: 'clamp(120px, 22vw, 185px)', // Cup height + label space
           }}
         >
           {/* Elaborate ball placement animation - clear and engaging */}
           <AnimatePresence>
             {showBallPlacement && (
               <>
-                {/* Ball dropping from above with multiple stages */}
+                {/* Ball dropping from above with multiple stages - lands inside cup */}
                 <motion.div
                   key="ball-placement"
                   initial={{ 
-                    y: -300,
+                    y: -250,
                     scale: 0.3,
                     opacity: 0,
                     rotate: 0,
                   }}
                   animate={{ 
-                    y: [null, -100, 50, 80, 100],
-                    scale: [0.3, 0.8, 1.2, 1.0, 1],
+                    // Cups are aligned at flex-end (bottom), ball should match result ball position
+                    // Result ball is at: bottom: clamp(15px, 2.5vw, 25px) from cup bottom
+                    // Cup height: clamp(100px, 18vw, 160px)
+                    // From top of container: container height - cup height + ball offset
+                    // Using relative positioning: drop to match result ball position
+                    y: [null, -100, 30, 50, 65], // Drop from above, settle at bottom of cup (matching result ball)
+                    scale: [0.3, 0.8, 1.1, 0.95, 0.85], // Scale to fit inside cup (match result ball size)
                     opacity: [0, 0.5, 1, 1, 1],
                     rotate: [0, 180, 360, 360, 360],
                   }}
@@ -445,11 +451,11 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
                   }}
                   style={{
                     position: 'absolute',
-                    top: 0,
+                    top: 0, // Start from top of container
                     left: '50%',
                     transform: `translateX(calc(-50% + ${(ballPosition - 1) * 172}px))`,
-                    width: 'clamp(50px, 10vw, 60px)',
-                    height: 'clamp(50px, 10vw, 60px)',
+                    width: 'clamp(35px, 7vw, 50px)', // Match the size of ball shown in results
+                    height: 'clamp(35px, 7vw, 50px)',
                     borderRadius: '50%',
                     backgroundColor: wingShackTheme.colors.secondary,
                     boxShadow: `0 8px 24px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2)`,
@@ -462,11 +468,11 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
                 <motion.div
                   key="ball-trail"
                   initial={{ 
-                    y: -300,
+                    y: -250,
                     opacity: 0,
                   }}
                   animate={{ 
-                    y: 100,
+                    y: 65, // Match final ball position
                     opacity: [0, 0.6, 0.3, 0],
                   }}
                   exit={{ 
@@ -481,8 +487,8 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
                     top: 0,
                     left: '50%',
                     transform: `translateX(calc(-50% + ${(ballPosition - 1) * 172}px))`,
-                    width: 'clamp(40px, 8vw, 50px)',
-                    height: '400px',
+                    width: 'clamp(30px, 6vw, 45px)',
+                    height: '315px', // Adjusted to match new path (250 + 65)
                     background: `linear-gradient(to bottom, 
                       ${wingShackTheme.colors.secondary}40 0%, 
                       ${wingShackTheme.colors.secondary}20 50%, 
