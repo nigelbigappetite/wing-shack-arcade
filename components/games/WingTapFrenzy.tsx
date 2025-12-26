@@ -345,6 +345,40 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
     onReset: resetGame,
   });
 
+  // Initialize audio
+  useEffect(() => {
+    const audio = new Audio('/mixkit-chewing-something-crunchy-2244.mp3.mp3');
+    audio.preload = 'auto';
+    audio.volume = 0.7;
+    wingTapAudioRef.current = audio;
+
+    // Unlock audio on first user interaction
+    const unlockAudio = () => {
+      if (!audioUnlockedRef.current) {
+        audioUnlockedRef.current = true;
+        // Try to play and immediately pause to unlock
+        audio.play().then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+        }).catch(() => {
+          // Ignore errors
+        });
+      }
+    };
+
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+      if (audio) {
+        audio.pause();
+        audio.src = '';
+      }
+    };
+  }, []);
+
   // Auto-remove wings after 1 second
   useEffect(() => {
     if (!isGameActiveRef.current || gameEndedRef.current) return;
