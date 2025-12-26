@@ -340,10 +340,6 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     };
   }, []);
 
-  // Auto-shuffle on mount
-  useEffect(() => {
-    shuffleCups();
-  }, []);
 
   // Cleanup
   useEffect(() => {
