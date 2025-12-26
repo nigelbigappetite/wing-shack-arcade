@@ -90,7 +90,8 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     // Animate shuffling with position swaps - start slow, gradually speed up
     // Total duration should be ~20 seconds (slower speeds for easier tracking)
     const totalDuration = 20000; // 20 seconds in milliseconds
-    const fadeOutStart = 0.85; // Start fading out at 85% of shuffle (last ~3 seconds)
+    const fadeOutStart = 0.75; // Start fading out at 75% of shuffle (last ~5 seconds)
+    const audioStopAt = 0.95; // Stop audio completely at 95% to avoid reaching end
     
     const getSwapDelay = (swapIndex: number, totalSwaps: number) => {
       // Start slow (1200ms), gradually speed up to moderate (400ms)
@@ -105,13 +106,17 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     };
 
     const performSwap = (swapIndex: number) => {
-      // Handle audio fade-out near the end (only if sound is enabled)
+      // Handle audio fade-out and stop before end (only if sound is enabled)
       if (shuffleAudioRef.current && soundEnabled) {
         const progress = swapIndex / sequence.length;
         
-        if (progress >= fadeOutStart) {
-          // Fade out in the last 15% of shuffles
-          const fadeProgress = (progress - fadeOutStart) / (1 - fadeOutStart);
+        if (progress >= audioStopAt) {
+          // Stop audio completely before reaching the end
+          shuffleAudioRef.current.pause();
+          shuffleAudioRef.current.currentTime = 0;
+        } else if (progress >= fadeOutStart) {
+          // Fade out in the last 20% of shuffles (from 75% to 95%)
+          const fadeProgress = (progress - fadeOutStart) / (audioStopAt - fadeOutStart);
           const targetVolume = 0.7 * (1 - fadeProgress); // Fade from 0.7 to 0
           shuffleAudioRef.current.volume = Math.max(0, targetVolume);
         }
