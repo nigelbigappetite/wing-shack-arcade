@@ -15,7 +15,7 @@ export default function ThreeCupPage() {
       style={{
         width: '100vw',
         minHeight: '100vh',
-        padding: wingShackTheme.spacing.lg,
+        padding: 'clamp(8px, 2vw, 16px)',
         boxSizing: 'border-box',
         backgroundColor: wingShackTheme.colors.background,
         backgroundImage: `
@@ -27,43 +27,35 @@ export default function ThreeCupPage() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'flex-start',
-        gap: wingShackTheme.spacing.xl,
+        gap: 'clamp(8px, 2vw, 12px)',
       }}
     >
-      {/* Header with Logo */}
-      <GameCard elevated glow style={{ marginTop: wingShackTheme.spacing.xl }}>
+      {/* Header with Logo - Compact for Mobile */}
+      <GameCard elevated glow style={{ marginTop: 'clamp(8px, 2vw, 16px)' }}>
         <div
           style={{
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: 'row',
             alignItems: 'center',
-            gap: wingShackTheme.spacing.md,
+            justifyContent: 'center',
+            gap: 'clamp(8px, 2vw, 12px)',
+            padding: 'clamp(8px, 2vw, 12px)',
           }}
         >
-          <WingShackLogo size="lg" showText={false} />
+          <WingShackLogo size="sm" showText={false} />
           <h1
             style={{
               fontFamily: wingShackTheme.typography.fontFamily.display,
-              fontSize: wingShackTheme.typography.fontSize['4xl'],
+              fontSize: 'clamp(16px, 4vw, 22px)',
               fontWeight: wingShackTheme.typography.fontWeight.bold,
               color: wingShackTheme.colors.text,
               margin: 0,
-              letterSpacing: '1px',
-              textShadow: `0 2px 8px rgba(159, 8, 8, 0.3)`,
+              letterSpacing: '0.5px',
+              textShadow: `0 1px 4px rgba(159, 8, 8, 0.2)`,
             }}
           >
             THREE CUP GAME
           </h1>
-          <p
-            style={{
-              color: wingShackTheme.colors.textSecondary,
-              fontSize: wingShackTheme.typography.fontSize.lg,
-              margin: 0,
-              textAlign: 'center',
-            }}
-          >
-            Follow the mascot and find the ball!
-          </p>
         </div>
       </GameCard>
 
@@ -74,7 +66,7 @@ export default function ThreeCupPage() {
         style={{
           width: '100%',
           maxWidth: '1000px',
-          padding: wingShackTheme.spacing.xl,
+          padding: 'clamp(8px, 2vw, 16px)',
         }}
       >
         <GameShell

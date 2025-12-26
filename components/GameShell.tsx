@@ -119,12 +119,12 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
         {/* Header */}
         <div
           style={{
-            padding: '16px 20px',
+            padding: 'clamp(8px, 1.5vw, 12px) clamp(12px, 2vw, 16px)',
             backgroundColor: 'rgba(255, 255, 255, 0.95)',
             borderBottom: '1px solid rgba(159, 8, 8, 0.2)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
+            gap: 'clamp(6px, 1vw, 8px)',
             zIndex: 10,
             boxShadow: '0 2px 8px rgba(159, 8, 8, 0.1)',
           }}
@@ -143,12 +143,12 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
               style={{
                 color: wingShackTheme.colors.text,
                 margin: 0,
-                fontSize: 'clamp(18px, 4vw, 24px)',
+                fontSize: 'clamp(14px, 3vw, 18px)',
                 fontFamily: wingShackTheme.typography.fontFamily.display,
                 fontWeight: wingShackTheme.typography.fontWeight.bold,
                 flex: 1,
-                minWidth: '120px',
-                letterSpacing: '1px',
+                minWidth: '100px',
+                letterSpacing: '0.5px',
               }}
             >
               {title}
@@ -158,7 +158,7 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
             <div
               style={{
                 display: 'flex',
-                gap: '8px',
+                gap: 'clamp(4px, 1vw, 6px)',
                 alignItems: 'center',
                 flexWrap: 'wrap',
               }}
@@ -172,19 +172,19 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
               >
                 <button
                   style={{
-                    padding: '8px 12px',
+                    padding: 'clamp(6px, 1.5vw, 8px) clamp(8px, 2vw, 10px)',
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     color: wingShackTheme.colors.text,
                     border: '1px solid rgba(255, 255, 255, 0.2)',
                     borderRadius: '6px',
                     cursor: 'pointer',
-                    fontSize: 'clamp(12px, 2.5vw, 14px)',
+                    fontSize: 'clamp(10px, 2vw, 12px)',
                     fontWeight: 500,
                     transition: 'all 0.2s',
                     whiteSpace: 'nowrap',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
+                    gap: '4px',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = wingShackTheme.colors.primary + '40';
@@ -201,13 +201,13 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
               <button
                 onClick={() => setShowHowToPlay(!showHowToPlay)}
                 style={{
-                  padding: '8px 12px',
+                  padding: 'clamp(6px, 1.5vw, 8px) clamp(8px, 2vw, 10px)',
                   backgroundColor: showHowToPlay ? wingShackTheme.colors.secondary : 'rgba(255, 255, 255, 0.1)',
                   color: showHowToPlay ? '#000' : wingShackTheme.colors.text,
                   border: `1px solid ${showHowToPlay ? wingShackTheme.colors.secondary : 'rgba(255, 255, 255, 0.2)'}`,
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  fontSize: 'clamp(12px, 2.5vw, 14px)',
+                  fontSize: 'clamp(10px, 2vw, 12px)',
                   fontWeight: 500,
                   transition: 'all 0.2s',
                   whiteSpace: 'nowrap',
@@ -230,14 +230,14 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
               <button
                 onClick={toggleSound}
                 style={{
-                  padding: '8px 12px',
+                  padding: 'clamp(6px, 1.5vw, 8px)',
                   backgroundColor: soundEnabled ? 'rgba(78, 205, 196, 0.2)' : 'rgba(255, 255, 255, 0.1)',
                   color: '#fff',
                   border: '1px solid rgba(255, 255, 255, 0.2)',
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  fontSize: '18px',
-                  minWidth: '40px',
+                  fontSize: 'clamp(14px, 2.5vw, 16px)',
+                  minWidth: 'clamp(32px, 6vw, 36px)',
                   transition: 'all 0.2s',
                 }}
                 onMouseEnter={(e) => {
@@ -258,14 +258,14 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
                 <button
                   onClick={handlePause}
                   style={{
-                    padding: '8px 12px',
+                    padding: 'clamp(6px, 1.5vw, 8px)',
                     backgroundColor: isPaused ? 'rgba(255, 107, 107, 0.2)' : 'rgba(78, 205, 196, 0.2)',
                     color: '#fff',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
                     borderRadius: '6px',
                     cursor: 'pointer',
-                    fontSize: '18px',
-                    minWidth: '40px',
+                    fontSize: 'clamp(14px, 2.5vw, 16px)',
+                    minWidth: 'clamp(32px, 6vw, 36px)',
                     transition: 'all 0.2s',
                   }}
                   onMouseEnter={(e) => {
@@ -289,13 +289,13 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
                 <button
                   onClick={handleStart}
                   style={{
-                    padding: '10px 20px',
+                    padding: 'clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px)',
                   backgroundColor: wingShackTheme.colors.primary,
                   color: '#ffffff',
                   border: 'none',
                   borderRadius: wingShackTheme.borderRadius.md,
                     cursor: 'pointer',
-                    fontSize: '16px',
+                    fontSize: 'clamp(12px, 2.5vw, 14px)',
                     fontWeight: 600,
                     transition: 'all 0.2s',
                     whiteSpace: 'nowrap',
@@ -317,13 +317,13 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
                 <button
                   onClick={handleReset}
                   style={{
-                    padding: '10px 20px',
+                    padding: 'clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px)',
                     backgroundColor: 'rgba(255, 107, 107, 0.8)',
                     color: '#fff',
                     border: 'none',
                     borderRadius: '6px',
                     cursor: 'pointer',
-                    fontSize: '16px',
+                    fontSize: 'clamp(12px, 2.5vw, 14px)',
                     fontWeight: 600,
                     transition: 'all 0.2s',
                     whiteSpace: 'nowrap',
@@ -354,7 +354,7 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
                 style={{
                   overflow: 'hidden',
                   borderTop: '1px solid rgba(159, 8, 8, 0.2)',
-                  paddingTop: '12px',
+                  paddingTop: 'clamp(6px, 1vw, 8px)',
                 }}
               >
                 <p
