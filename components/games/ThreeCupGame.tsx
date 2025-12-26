@@ -336,45 +336,6 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
           position: 'relative',
         }}
       >
-        {/* Mascot - Corner position, out of the way */}
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ 
-            scale: 1, 
-            opacity: 1,
-          }}
-          transition={{ 
-            duration: 0.5,
-          }}
-          style={{
-            position: 'absolute',
-            top: 'clamp(8px, 2vw, 16px)',
-            right: 'clamp(8px, 2vw, 16px)',
-            width: 'clamp(60px, 12vw, 100px)',
-            height: 'clamp(60px, 12vw, 100px)',
-            zIndex: 1,
-            pointerEvents: 'none',
-          }}
-        >
-          <motion.img
-            src="/mascot - no background_.png"
-            alt="Wing Shack Mascot"
-            animate={{
-              rotate: isShuffling ? [0, 5, -5, 0] : 0,
-            }}
-            transition={{
-              rotate: { duration: 0.6, repeat: isShuffling ? Infinity : 0 }
-            }}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15))',
-              opacity: 0.7,
-            }}
-          />
-        </motion.div>
-
         {/* Instructions */}
         {!hasGuessed && !isShuffling && !showBallPlacement && (
           <motion.p
@@ -635,7 +596,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
                 }}
               >
                 {won
-                  ? 'Great job following the mascot!'
+                  ? 'Great job! You found the ball!'
                   : (() => {
                       // Find which visual cup position has the ball
                       const visualCupWithBall = cupPositions.findIndex(cup => cup === ballPosition);
