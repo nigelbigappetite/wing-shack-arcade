@@ -46,15 +46,16 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
     const container = gameContainerRef.current;
     const containerRect = container.getBoundingClientRect();
     const padding = WING_SIZE / 2;
-    const maxX = containerRect.width - WING_SIZE;
-    const maxY = containerRect.height - WING_SIZE;
+    // Ensure wings stay within bounds
+    const maxX = Math.max(0, containerRect.width - WING_SIZE - padding);
+    const maxY = Math.max(0, containerRect.height - WING_SIZE - padding);
 
     let attempts = 0;
     const maxAttempts = 50;
 
     while (attempts < maxAttempts) {
-      const x = Math.random() * maxX + padding;
-      const y = Math.random() * maxY + padding;
+      const x = Math.max(padding, Math.min(maxX, Math.random() * maxX + padding));
+      const y = Math.max(padding, Math.min(maxY, Math.random() * maxY + padding));
 
       // Check if this position overlaps with existing wings
       const tooClose = existingWings.some((wing) => {
@@ -73,18 +74,18 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
 
     // If we can't find a non-overlapping position, return a random one anyway
     return {
-      x: Math.random() * maxX + padding,
-      y: Math.random() * maxY + padding,
+      x: Math.max(padding, Math.min(maxX, Math.random() * maxX + padding)),
+      y: Math.max(padding, Math.min(maxY, Math.random() * maxY + padding)),
     };
   }, []);
 
   // Spawn a new wing
   const spawnWing = useCallback(() => {
     setWings((prevWings) => {
-      // Remove wings that are too old (more than 3 seconds)
+      // Remove wings that are too old (more than 1 second)
       const now = Date.now();
       const filteredWings = prevWings.filter(
-        (wing) => now - wing.createdAt < 3000
+        (wing) => now - wing.createdAt < 1000
       );
 
       // Don't spawn if we already have max wings
@@ -130,7 +131,13 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
 
   // Game timer using requestAnimationFrame for precision
   const updateTimer = useCallback(() => {
-    if (!isGameActive || gameEnded) return;
+    if (!isGameActiveRef.current || gameEndedRef.current) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      return;
+    }
 
     const now = Date.now();
     const elapsed = (now - startTimeRef.current - pausedTimeRef.current) / 1000;
@@ -139,6 +146,8 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
     setTimeRemaining(Math.ceil(remaining));
 
     if (remaining <= 0) {
+      isGameActiveRef.current = false;
+      gameEndedRef.current = true;
       setIsGameActive(false);
       setGameEnded(true);
       setWings([]);
@@ -146,10 +155,14 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
+      if (wingSpawnRef.current) {
+        clearTimeout(wingSpawnRef.current);
+        wingSpawnRef.current = null;
+      }
     } else {
       animationFrameRef.current = requestAnimationFrame(updateTimer);
     }
-  }, [isGameActive, gameEnded]);
+  }, []);
 
   // Start the game
   const startGame = useCallback(() => {
@@ -267,6 +280,20 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
     onReset: resetGame,
   });
 
+  // Auto-remove wings after 1 second
+  useEffect(() => {
+    if (!isGameActiveRef.current || gameEndedRef.current) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setWings((prevWings) => {
+        return prevWings.filter((wing) => now - wing.createdAt < 1000);
+      });
+    }, 100); // Check every 100ms
+
+    return () => clearInterval(interval);
+  }, [isGameActive, gameEnded]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -292,9 +319,10 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
           minHeight: 'clamp(400px, 60vh, 600px)',
           position: 'relative',
           overflow: 'hidden',
-          backgroundColor: wingShackTheme.colors.background,
+          backgroundColor: '#ffffff',
           borderRadius: wingShackTheme.borderRadius.lg,
           touchAction: 'manipulation', // Optimize for touch
+          isolation: 'isolate', // Create new stacking context to prevent gaps
         }}
       >
         {/* Game UI Overlay */}

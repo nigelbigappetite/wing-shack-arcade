@@ -53,6 +53,7 @@ export default function WingTapFrenzyPage() {
           width: '100%',
           maxWidth: '1000px',
           padding: 'clamp(8px, 2vw, 16px)',
+          overflow: 'hidden',
         }}
       >
         <GameShell
