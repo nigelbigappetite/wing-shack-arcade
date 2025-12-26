@@ -18,7 +18,7 @@ interface WingTapFrenzyProps {
 }
 
 const LEVEL_CONFIG = [
-  { target: 10, duration: 15, spawnMin: 1000, spawnMax: 2000 }, // Level 1: 10 wings in 15s, 1-2s spawn
+  { target: 20, duration: 15, spawnMin: 1000, spawnMax: 2000 }, // Level 1: 20 wings in 15s, 1-2s spawn
   { target: 20, duration: 20, spawnMin: 500, spawnMax: 1200 }, // Level 2: 20 wings in 20s, 0.5-1.2s spawn (faster)
 ];
 
@@ -47,6 +47,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
   const gameEndedRef = useRef<boolean>(false);
   const wingTapAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioUnlockedRef = useRef<boolean>(false);
+  const scoreRef = useRef<number>(0); // Ref to track score for accurate checking
 
   // Generate random position that doesn't overlap with existing wings
   const generateRandomPosition = useCallback((existingWings: Wing[]): { x: number; y: number } | null => {
@@ -136,6 +137,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
       setWings((prevWings) => prevWings.filter((wing) => wing.id !== wingId));
       setScore((prev) => {
         const newScore = prev + 1;
+        scoreRef.current = newScore; // Update ref
         onScore?.(newScore);
         return newScore;
       });
@@ -174,9 +176,10 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
       setGameEnded(true);
       setWings([]);
       
-      // Check if target was met
+      // Check if target was met - use ref for accurate score
       const target = levelConfig.target;
-      if (score >= target) {
+      const currentScore = scoreRef.current;
+      if (currentScore >= target) {
         // Level complete - check if there's a next level
         if (currentLevel < LEVEL_CONFIG.length - 1) {
           setLevelMessage('LEVEL COMPLETE!');
@@ -201,7 +204,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
         }
       } else {
         // Failed to meet target
-        setLevelMessage(`YOU LOSE!\nTarget: ${target}\nYou got: ${score}`);
+        setLevelMessage(`YOU LOSE!\nTarget: ${target}\nYou got: ${currentScore}`);
         setShowLevelMessage(true);
       }
       
@@ -222,6 +225,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
   const startGame = useCallback(() => {
     const levelConfig = LEVEL_CONFIG[currentLevel];
     setScore(0);
+    scoreRef.current = 0; // Reset score ref
     setTimeRemaining(levelConfig.duration);
     setWings([]);
     setGameEnded(false);
@@ -311,6 +315,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
     setIsGameActive(false);
     setGameEnded(false);
     setScore(0);
+    scoreRef.current = 0; // Reset score ref
     setCurrentLevel(0);
     setShowLevelMessage(false);
     setTimeRemaining(LEVEL_CONFIG[0].duration);
@@ -417,7 +422,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                   color: wingShackTheme.colors.primary,
                 }}
               >
-                Score: {score}
+                {scoreRef.current || score} / {LEVEL_CONFIG[currentLevel].target}
               </div>
             </div>
 
@@ -607,7 +612,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                   textAlign: 'center',
                 }}
               >
-                {score} / {LEVEL_CONFIG[currentLevel].target}
+                {scoreRef.current || score} / {LEVEL_CONFIG[currentLevel].target}
               </motion.div>
 
               <motion.div
