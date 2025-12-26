@@ -324,25 +324,27 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
           backgroundColor: '#ffffff',
           minHeight: '100%',
           boxSizing: 'border-box',
+          position: 'relative',
         }}
       >
-        {/* Mascot - Centerpiece */}
+        {/* Mascot - Corner position, out of the way */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ 
             scale: 1, 
             opacity: 1,
-            y: isShuffling ? [0, -5, 0] : 0,
           }}
           transition={{ 
             duration: 0.5,
-            y: { duration: 0.5, repeat: isShuffling ? Infinity : 0 }
           }}
           style={{
-            position: 'relative',
-            width: 'clamp(120px, 20vw, 200px)',
-            height: 'clamp(120px, 20vw, 200px)',
-            marginBottom: 'clamp(8px, 2vw, 16px)',
+            position: 'absolute',
+            top: 'clamp(8px, 2vw, 16px)',
+            right: 'clamp(8px, 2vw, 16px)',
+            width: 'clamp(60px, 12vw, 100px)',
+            height: 'clamp(60px, 12vw, 100px)',
+            zIndex: 1,
+            pointerEvents: 'none',
           }}
         >
           <motion.img
@@ -358,10 +360,10 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
               width: '100%',
               height: '100%',
               objectFit: 'contain',
-              filter: 'drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2))',
+              filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15))',
+              opacity: 0.7,
             }}
           />
-          
         </motion.div>
 
         {/* Instructions */}
@@ -436,7 +438,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
               <motion.div
                 key="ball-placement"
                 initial={{ 
-                  y: -120, // Start near mascot position (above cups)
+                  y: -80, // Start from above cups
                   scale: 0.8,
                   opacity: 0,
                 }}
