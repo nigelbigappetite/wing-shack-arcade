@@ -382,7 +382,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
               fontWeight: wingShackTheme.typography.fontWeight.medium,
             }}
           >
-            Where's the ball? Pick your pot!
+            Press start and follow the ball.
           </motion.p>
         )}
 
