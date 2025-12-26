@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { wingShackTheme } from '@/theme/wingShackTheme';
 import WingShackLogo from '@/components/ui/WingShackLogo';
 import GameCard from '@/components/ui/GameCard';
+import ThreeCupLogo from '@/components/ui/ThreeCupLogo';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
@@ -21,10 +22,10 @@ const games: Game[] = [
   {
     id: 'three-cup',
     title: 'Three Cup Game',
-    description: 'Follow the mascot and find the ball!',
+    description: 'Follow the cup and find the ball!',
     href: '/three-cup',
     color: wingShackTheme.colors.primary,
-    icon: '🎯',
+    icon: 'three-cup-logo',
     category: 'Arcade',
   },
 ];
@@ -167,9 +168,16 @@ export default function Home() {
                       lineHeight: 1,
                       filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
                       marginTop: 'clamp(8px, 1.5vw, 16px)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    {game.icon}
+                    {game.icon === 'three-cup-logo' ? (
+                      <ThreeCupLogo size="lg" />
+                    ) : (
+                      game.icon
+                    )}
                   </motion.div>
 
                   {/* Game Info */}

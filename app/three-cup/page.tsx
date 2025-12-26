@@ -5,7 +5,7 @@ import Link from 'next/link';
 import GameShell from '@/components/GameShell';
 import ThreeCupGame from '@/components/games/ThreeCupGame';
 import { wingShackTheme } from '@/theme/wingShackTheme';
-import ThreeCupLogo from '@/components/ui/ThreeCupLogo';
+import WingShackLogo from '@/components/ui/WingShackLogo';
 import GameCard from '@/components/ui/GameCard';
 
 export default function ThreeCupPage() {
@@ -43,7 +43,7 @@ export default function ThreeCupPage() {
           cursor: 'pointer',
         }}
       >
-        <ThreeCupLogo size="sm" />
+        <WingShackLogo size="sm" showText={false} />
       </Link>
 
       {/* Game Container */}
