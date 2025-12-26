@@ -26,10 +26,12 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
   const shuffleSequenceRef = useRef<Array<{ from: number; to: number }>>([]);
   const shuffleAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioUnlockedRef = useRef<boolean>(false);
+  const isShufflingRef = useRef<boolean>(false);
 
   // Start shuffling after ball is placed
   const startShuffling = useCallback((ballPos: number) => {
     setIsShuffling(true);
+    isShufflingRef.current = true;
     setSelectedCup(null);
     setHasGuessed(false);
     setShowResult(false);
@@ -37,12 +39,16 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     setCupPositions([0, 1, 2]); // Reset to original order
     setBallPosition(ballPos);
 
+    // Get audio duration to use as time limit
+    const audioDuration = shuffleAudioRef.current?.duration || 20000; // Fallback to 20s if duration not available
+    const totalDuration = audioDuration * 1000; // Convert to milliseconds
+
     // Start shuffle sound effect (only if sound is enabled)
     // Reset volume and ensure it's ready to play
     if (shuffleAudioRef.current && soundEnabled) {
       try {
         shuffleAudioRef.current.volume = 0.7; // Reset volume
-        shuffleAudioRef.current.loop = true;
+        shuffleAudioRef.current.loop = false; // Don't loop - song duration is the time limit
         shuffleAudioRef.current.currentTime = 0; // Reset to start
         
         // Play audio - should work since it's triggered by user interaction (Start button)
@@ -59,16 +65,28 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
             }
           });
         }
+
+        // Stop shuffling when audio ends - song duration is the time limit
+        const handleAudioEnd = () => {
+          isShufflingRef.current = false;
+          setIsShuffling(false);
+          if (shuffleAnimationRef.current) {
+            cancelAnimationFrame(shuffleAnimationRef.current);
+          }
+        };
+        shuffleAudioRef.current.addEventListener('ended', handleAudioEnd);
+        
+        // Store cleanup function
+        (shuffleAudioRef.current as any).__endHandler = handleAudioEnd;
       } catch (error) {
         console.warn('Error setting up audio:', error);
       }
     }
 
     // Generate shuffle sequence - actual swaps
-    // Calculate number of swaps needed for ~20 seconds total (slower speeds for easier tracking)
+    // Calculate number of swaps based on audio duration
     // Start slow (1200ms), speed up to moderate (400ms), average ~500ms per swap
-    // For 20 seconds: ~40 swaps
-    const maxShuffles = 35 + Math.floor(Math.random() * 10); // 35-45 shuffles for ~20 seconds
+    const maxShuffles = Math.floor(totalDuration / 500); // Calculate based on average delay
     const sequence: Array<{ from: number; to: number }> = [];
     let currentPositions = [0, 1, 2];
 
@@ -88,9 +106,8 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     shuffleSequenceRef.current = sequence;
 
     // Animate shuffling with position swaps - start slow, gradually speed up
-    // Total duration should be ~20 seconds (slower speeds for easier tracking)
-    const totalDuration = 20000; // 20 seconds in milliseconds
-    const fadeOutStart = 0.75; // Start fading out at 75% of shuffle (last ~5 seconds)
+    // Total duration matches audio duration
+    const fadeOutStart = 0.75; // Start fading out at 75% of shuffle
     const audioStopAt = 0.95; // Stop audio completely at 95% to avoid reaching end
     
     const getSwapDelay = (swapIndex: number, totalSwaps: number) => {
@@ -122,13 +139,20 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
         }
       }
       
-      if (swapIndex >= sequence.length) {
+      // Stop if shuffling was stopped (e.g., by audio ending) or we've reached the end
+      if (!isShufflingRef.current || swapIndex >= sequence.length) {
+        isShufflingRef.current = false;
         setIsShuffling(false);
         // Stop shuffle sound effect
         if (shuffleAudioRef.current) {
           shuffleAudioRef.current.pause();
           shuffleAudioRef.current.currentTime = 0;
           shuffleAudioRef.current.volume = 0.7; // Reset volume for next game
+          // Remove ended event listener
+          if ((shuffleAudioRef.current as any).__endHandler) {
+            shuffleAudioRef.current.removeEventListener('ended', (shuffleAudioRef.current as any).__endHandler);
+            (shuffleAudioRef.current as any).__endHandler = null;
+          }
         }
         return;
       }
@@ -148,7 +172,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     };
 
     performSwap(0);
-  }, []);
+  }, [soundEnabled]);
 
   // Show ball placement animation first
   const showPlacementAnimation = useCallback((targetCup: number) => {
@@ -190,6 +214,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
 
   // Reset game
   const resetGame = useCallback(() => {
+    isShufflingRef.current = false;
     setSelectedCup(null);
     setHasGuessed(false);
     setShowResult(false);
@@ -203,6 +228,11 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     if (shuffleAudioRef.current) {
       shuffleAudioRef.current.pause();
       shuffleAudioRef.current.currentTime = 0;
+      // Remove ended event listener
+      if ((shuffleAudioRef.current as any).__endHandler) {
+        shuffleAudioRef.current.removeEventListener('ended', (shuffleAudioRef.current as any).__endHandler);
+        (shuffleAudioRef.current as any).__endHandler = null;
+      }
     }
     
     if (shuffleAnimationRef.current) {
@@ -222,6 +252,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     },
     onPause: () => {
       // Stop shuffle sound effect when paused
+      isShufflingRef.current = false;
       if (shuffleAudioRef.current) {
         shuffleAudioRef.current.pause();
         shuffleAudioRef.current.currentTime = 0;
@@ -355,7 +386,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
               fontWeight: wingShackTheme.typography.fontWeight.medium,
             }}
           >
-            Watch carefully as the cups shuffle! Can you find the ball?
+            Where's the ball? Pick your pot!
           </motion.p>
         )}
 
