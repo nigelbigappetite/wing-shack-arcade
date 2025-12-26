@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import GameShell from '@/components/GameShell';
 import ThreeCupGame from '@/components/games/ThreeCupGame';
 import { wingShackTheme } from '@/theme/wingShackTheme';
@@ -32,16 +33,19 @@ export default function ThreeCupPage() {
     >
       {/* Header with Logo - Compact for Mobile */}
       <GameCard elevated glow style={{ marginTop: 'clamp(8px, 2vw, 16px)' }}>
-        <div
+        <Link
+          href="/"
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: 'clamp(8px, 2vw, 12px)',
+            padding: 'clamp(4px, 1vw, 8px)',
+            textDecoration: 'none',
+            cursor: 'pointer',
           }}
         >
           <WingShackLogo size="sm" showText={false} />
-        </div>
+        </Link>
       </GameCard>
 
       {/* Game Container */}
