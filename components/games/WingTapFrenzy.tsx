@@ -17,7 +17,7 @@ interface WingTapFrenzyProps {
   onScore?: (score: number) => void;
 }
 
-const GAME_DURATION = 10; // 10 seconds
+const GAME_DURATION = 15; // 15 seconds (will be faster in later levels)
 const MAX_WINGS = 2; // Max 1-2 wings visible at once
 const WING_SIZE = 80; // Size of wing in pixels
 const MIN_DISTANCE = 120; // Minimum distance between wings to prevent overlap
@@ -361,27 +361,45 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
               </div>
             </div>
 
-            {/* Timer */}
+            {/* Timer - Digital Display */}
             <div
               style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                padding: 'clamp(8px, 1.5vw, 12px) clamp(16px, 2.5vw, 24px)',
-                borderRadius: wingShackTheme.borderRadius.lg,
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                backgroundColor: '#000000',
+                padding: 'clamp(10px, 2vw, 14px) clamp(20px, 3vw, 28px)',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.5)',
+                border: '2px solid #333333',
+                position: 'relative',
               }}
             >
+              {/* Digital timer glow effect */}
               <div
                 style={{
-                  fontFamily: wingShackTheme.typography.fontFamily.display,
-                  fontSize: 'clamp(18px, 3vw, 24px)',
-                  fontWeight: wingShackTheme.typography.fontWeight.bold,
-                  color:
-                    timeRemaining <= 3
-                      ? wingShackTheme.colors.error
-                      : wingShackTheme.colors.primary,
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  borderRadius: '6px',
+                  background: timeRemaining <= 3
+                    ? 'radial-gradient(circle, rgba(159, 8, 8, 0.3) 0%, transparent 70%)'
+                    : 'radial-gradient(circle, rgba(0, 255, 0, 0.2) 0%, transparent 70%)',
+                  pointerEvents: 'none',
+                }}
+              />
+              <div
+                style={{
+                  fontFamily: "'Courier New', 'Monaco', monospace",
+                  fontSize: 'clamp(24px, 4vw, 32px)',
+                  fontWeight: 'bold',
+                  color: timeRemaining <= 3 ? '#ff4444' : '#00ff00',
+                  textShadow: `0 0 10px ${timeRemaining <= 3 ? 'rgba(255, 68, 68, 0.8)' : 'rgba(0, 255, 0, 0.8)'}, 0 0 20px ${timeRemaining <= 3 ? 'rgba(255, 68, 68, 0.5)' : 'rgba(0, 255, 0, 0.5)'}`,
+                  letterSpacing: '2px',
+                  position: 'relative',
+                  zIndex: 1,
                 }}
               >
-                {timeRemaining}s
+                {timeRemaining}
               </div>
             </div>
           </div>
