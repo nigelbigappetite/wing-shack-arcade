@@ -184,19 +184,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
         if (currentLevel < LEVEL_CONFIG.length - 1) {
           setLevelMessage('LEVEL COMPLETE!');
           setShowLevelMessage(true);
-          setTimeout(() => {
-            setShowLevelMessage(false);
-            // Advance to next level
-            setCurrentLevel(currentLevel + 1);
-            setScore(0);
-            setTimeRemaining(LEVEL_CONFIG[currentLevel + 1].duration);
-            setGameEnded(false);
-            gameEndedRef.current = false;
-            // Auto-start next level after 2 seconds
-            setTimeout(() => {
-              startGame();
-            }, 2000);
-          }, 2000);
+          // Don't auto-advance - wait for button click
         } else {
           // All levels complete
           setLevelMessage('ALL LEVELS COMPLETE!');
@@ -592,6 +580,47 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
               >
                 {levelMessage}
               </motion.div>
+              
+              {/* Next Level Button - only show if level complete and not all levels done */}
+              {levelMessage.includes('LEVEL COMPLETE') && currentLevel < LEVEL_CONFIG.length - 1 && (
+                <motion.button
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  onClick={() => {
+                    setShowLevelMessage(false);
+                    // Advance to next level
+                    setCurrentLevel(currentLevel + 1);
+                    setScore(0);
+                    scoreRef.current = 0;
+                    setTimeRemaining(LEVEL_CONFIG[currentLevel + 1].duration);
+                    setGameEnded(false);
+                    gameEndedRef.current = false;
+                    // Start next level
+                    setTimeout(() => {
+                      startGame();
+                    }, 100);
+                  }}
+                  style={{
+                    padding: 'clamp(12px, 2vw, 16px) clamp(32px, 5vw, 48px)',
+                    backgroundColor: wingShackTheme.colors.secondary,
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: wingShackTheme.borderRadius.lg,
+                    fontFamily: wingShackTheme.typography.fontFamily.display,
+                    fontSize: 'clamp(18px, 3vw, 24px)',
+                    fontWeight: wingShackTheme.typography.fontWeight.bold,
+                    letterSpacing: '2px',
+                    cursor: 'pointer',
+                    boxShadow: `0 6px 20px ${wingShackTheme.colors.secondary}50`,
+                    transition: 'all 0.3s ease',
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  NEXT LEVEL →
+                </motion.button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
