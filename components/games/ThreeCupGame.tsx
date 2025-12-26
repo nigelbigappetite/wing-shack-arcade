@@ -22,6 +22,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
   const [won, setWon] = useState(false);
   const [shuffleCount, setShuffleCount] = useState(0);
   const [showBallPlacement, setShowBallPlacement] = useState(false);
+  const [hasShuffled, setHasShuffled] = useState(false); // Track if shuffling has completed
   const shuffleAnimationRef = useRef<number>();
   const shuffleSequenceRef = useRef<Array<{ from: number; to: number }>>([]);
   const shuffleAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -70,6 +71,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
         const handleAudioEnd = () => {
           isShufflingRef.current = false;
           setIsShuffling(false);
+          setHasShuffled(true); // Mark that shuffling has completed
           if (shuffleAnimationRef.current) {
             cancelAnimationFrame(shuffleAnimationRef.current);
           }
@@ -143,6 +145,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
       if (!isShufflingRef.current || swapIndex >= sequence.length) {
         isShufflingRef.current = false;
         setIsShuffling(false);
+        setHasShuffled(true); // Mark that shuffling has completed
         // Stop shuffle sound effect
         if (shuffleAudioRef.current) {
           shuffleAudioRef.current.pause();
@@ -222,6 +225,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     setShuffleCount(0);
     setIsShuffling(false);
     setShowBallPlacement(false);
+    setHasShuffled(false); // Reset shuffle completion state
     setCupPositions([0, 1, 2]);
     
     // Stop shuffle sound effect
@@ -382,7 +386,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
               fontWeight: wingShackTheme.typography.fontWeight.medium,
             }}
           >
-            Press start and follow the ball.
+            {hasShuffled ? "Where's the ball? Pick your pot!" : "Press start and follow the ball."}
           </motion.p>
         )}
 
