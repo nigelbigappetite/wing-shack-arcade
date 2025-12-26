@@ -149,11 +149,11 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
   const showPlacementAnimation = useCallback((targetCup: number) => {
     setShowBallPlacement(true);
     setBallPosition(targetCup);
-    // After animation, start shuffling
+    // After animation, give ball a second to sit in cup before starting shuffling
     setTimeout(() => {
       setShowBallPlacement(false);
       startShuffling(targetCup);
-    }, 1100); // 1.1 seconds for simple drop animation
+    }, 2100); // 1.1 seconds for drop animation + 1 second to sit in cup
   }, [startShuffling]);
 
   // Shuffle animation with actual position swapping
@@ -596,12 +596,8 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
                 }}
               >
                 {won
-                  ? 'Great job! You found the ball!'
-                  : (() => {
-                      // Find which visual cup position has the ball
-                      const visualCupWithBall = cupPositions.findIndex(cup => cup === ballPosition);
-                      return `The ball was under cup ${visualCupWithBall + 1}`;
-                    })()}
+                  ? "You found the ball! You're in the top 6% of players with natural tracking instinct."
+                  : "That round was brutal. Try again. Very few get it first time..."}
               </p>
             </motion.div>
           )}
