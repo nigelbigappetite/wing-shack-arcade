@@ -75,7 +75,7 @@ export default function Home() {
               color: wingShackTheme.colors.text,
               margin: 'clamp(12px, 2vw, 24px) 0 0 0',
               letterSpacing: 'clamp(2px, 0.5vw, 6px)',
-              textShadow: `0 2px 8px rgba(0, 0, 0, 0.15)`,
+              textShadow: `0 1px 3px rgba(0, 0, 0, 0.1)`,
             }}
           >
             ARCADE
@@ -211,7 +211,7 @@ export default function Home() {
                         margin: 0,
                         letterSpacing: 'clamp(1px, 0.3vw, 2px)',
                         textAlign: 'center',
-                        textShadow: `0 2px 8px ${game.color}40`,
+                        textShadow: `0 1px 3px rgba(0, 0, 0, 0.1)`,
                       }}
                     >
                       {game.title}

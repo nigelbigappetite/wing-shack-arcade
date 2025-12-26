@@ -49,7 +49,7 @@ export default function SpinTheWingPage() {
               color: wingShackTheme.colors.text,
               margin: 0,
               letterSpacing: '1px',
-              textShadow: `0 2px 8px rgba(159, 8, 8, 0.3)`,
+              textShadow: `0 1px 3px rgba(0, 0, 0, 0.1)`,
             }}
           >
             SPIN THE WING

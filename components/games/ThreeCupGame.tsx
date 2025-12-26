@@ -464,40 +464,6 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
                     pointerEvents: 'none',
                   }}
                 />
-                {/* Trail effect showing ball path */}
-                <motion.div
-                  key="ball-trail"
-                  initial={{ 
-                    y: -250,
-                    opacity: 0,
-                  }}
-                  animate={{ 
-                    y: 65, // Match final ball position
-                    opacity: [0, 0.6, 0.3, 0],
-                  }}
-                  exit={{ 
-                    opacity: 0,
-                  }}
-                  transition={{ 
-                    duration: 2,
-                    ease: 'easeOut',
-                  }}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: '50%',
-                    transform: `translateX(calc(-50% + ${(ballPosition - 1) * 172}px))`,
-                    width: 'clamp(30px, 6vw, 45px)',
-                    height: '315px', // Adjusted to match new path (250 + 65)
-                    background: `linear-gradient(to bottom, 
-                      ${wingShackTheme.colors.secondary}40 0%, 
-                      ${wingShackTheme.colors.secondary}20 50%, 
-                      transparent 100%)`,
-                    borderRadius: '50%',
-                    zIndex: 99,
-                    pointerEvents: 'none',
-                  }}
-                />
                 {/* Highlight on target cup */}
                 <motion.div
                   key="cup-highlight"

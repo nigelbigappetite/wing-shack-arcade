@@ -57,7 +57,7 @@ export const WingShackLogo: React.FC<WingShackLogoProps> = ({
             fontWeight: wingShackTheme.typography.fontWeight.bold,
             color: wingShackTheme.colors.text,
             letterSpacing: '2px',
-            textShadow: `0 1px 3px rgba(159, 8, 8, 0.2)`,
+            textShadow: `0 1px 2px rgba(0, 0, 0, 0.1)`,
           }}
         >
           WING SHACK
