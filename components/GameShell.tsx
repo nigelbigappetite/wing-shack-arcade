@@ -303,7 +303,7 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = wingShackTheme.colors.primaryLight;
                     e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.boxShadow = wingShackTheme.shadows.glow;
+                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.2)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = wingShackTheme.colors.primary;

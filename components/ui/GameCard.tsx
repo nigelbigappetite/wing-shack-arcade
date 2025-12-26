@@ -33,9 +33,9 @@ export const GameCard: React.FC<GameCardProps> = ({
     borderRadius: wingShackTheme.borderRadius.lg,
     padding: wingShackTheme.spacing.lg,
     boxShadow: elevated
-      ? `0 15px 50px rgba(159, 8, 8, 0.15), 0 5px 15px rgba(0, 0, 0, 0.1), 0 0 30px rgba(200, 88, 32, 0.1)`
+      ? `0 15px 50px rgba(0, 0, 0, 0.15), 0 5px 15px rgba(0, 0, 0, 0.1)`
       : glow
-      ? `0 10px 40px rgba(159, 8, 8, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1), 0 0 20px rgba(200, 88, 32, 0.15)`
+      ? `0 10px 40px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1)`
       : `0 10px 40px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05)`,
     border: `1px solid rgba(159, 8, 8, 0.1)`,
     overflow: 'hidden',
@@ -52,8 +52,8 @@ export const GameCard: React.FC<GameCardProps> = ({
         whileHover={{
           scale: 1.02,
           boxShadow: elevated
-            ? `${wingShackTheme.shadows.cardElevated}, ${wingShackTheme.shadows.glowStrong}`
-            : `${wingShackTheme.shadows.cardHover}, ${wingShackTheme.shadows.glow}`,
+            ? `0 20px 60px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15)`
+            : `0 15px 50px rgba(0, 0, 0, 0.2), 0 3px 10px rgba(0, 0, 0, 0.1)`,
           y: -4,
         }}
         whileTap={{ scale: 0.98 }}

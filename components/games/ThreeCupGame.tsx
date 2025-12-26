@@ -151,7 +151,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     setTimeout(() => {
       setShowBallPlacement(false);
       startShuffling(targetCup);
-    }, 1500); // 1.5 seconds for placement animation
+    }, 2200); // 2.2 seconds for elaborate placement animation
   }, [startShuffling]);
 
   // Shuffle animation with actual position swapping
@@ -408,45 +408,123 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
             position: 'relative',
           }}
         >
-          {/* Ball placement animation - drops from above into the selected cup */}
+          {/* Elaborate ball placement animation - clear and engaging */}
           <AnimatePresence>
             {showBallPlacement && (
-              <motion.div
-                key="ball-placement"
-                initial={{ 
-                  y: -200,
-                  scale: 0.6,
-                  opacity: 0,
-                }}
-                animate={{ 
-                  y: 100,
-                  scale: [0.6, 1.1, 1],
-                  opacity: [0, 1, 1],
-                }}
-                exit={{ 
-                  y: 140,
-                  scale: 0.5,
-                  opacity: 0,
-                }}
-                transition={{ 
-                  duration: 1.2,
-                  ease: [0.34, 1.56, 0.64, 1], // Bounce effect
-                }}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: '50%',
-                  transform: `translateX(calc(-50% + ${(ballPosition - 1) * 172}px))`, // 140px cup width + 32px gap
-                  width: 'clamp(45px, 9vw, 55px)',
-                  height: 'clamp(45px, 9vw, 55px)',
-                  borderRadius: '50%',
-                  backgroundColor: wingShackTheme.colors.secondary,
-                  boxShadow: `0 8px 24px ${wingShackTheme.colors.secondary}90, 0 0 40px ${wingShackTheme.colors.secondary}70`,
-                  border: `5px solid ${wingShackTheme.colors.secondaryLight}`,
-                  zIndex: 100,
-                  pointerEvents: 'none',
-                }}
-              />
+              <>
+                {/* Ball dropping from above with multiple stages */}
+                <motion.div
+                  key="ball-placement"
+                  initial={{ 
+                    y: -300,
+                    scale: 0.3,
+                    opacity: 0,
+                    rotate: 0,
+                  }}
+                  animate={{ 
+                    y: [null, -100, 50, 80, 100],
+                    scale: [0.3, 0.8, 1.2, 1.0, 1],
+                    opacity: [0, 0.5, 1, 1, 1],
+                    rotate: [0, 180, 360, 360, 360],
+                  }}
+                  exit={{ 
+                    y: 140,
+                    scale: 0.5,
+                    opacity: 0,
+                  }}
+                  transition={{ 
+                    duration: 2,
+                    times: [0, 0.3, 0.7, 0.9, 1],
+                    ease: [
+                      [0.25, 0.1, 0.25, 1], // Slow start
+                      [0.42, 0, 1, 1],      // Acceleration
+                      [0.34, 1.56, 0.64, 1], // Bounce
+                      [0.68, -0.55, 0.27, 1.55], // Settle
+                      [0.68, -0.55, 0.27, 1.55], // Final settle
+                    ],
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '50%',
+                    transform: `translateX(calc(-50% + ${(ballPosition - 1) * 172}px))`,
+                    width: 'clamp(50px, 10vw, 60px)',
+                    height: 'clamp(50px, 10vw, 60px)',
+                    borderRadius: '50%',
+                    backgroundColor: wingShackTheme.colors.secondary,
+                    boxShadow: `0 8px 24px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2)`,
+                    border: `4px solid ${wingShackTheme.colors.secondaryLight}`,
+                    zIndex: 100,
+                    pointerEvents: 'none',
+                  }}
+                />
+                {/* Trail effect showing ball path */}
+                <motion.div
+                  key="ball-trail"
+                  initial={{ 
+                    y: -300,
+                    opacity: 0,
+                  }}
+                  animate={{ 
+                    y: 100,
+                    opacity: [0, 0.6, 0.3, 0],
+                  }}
+                  exit={{ 
+                    opacity: 0,
+                  }}
+                  transition={{ 
+                    duration: 2,
+                    ease: 'easeOut',
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '50%',
+                    transform: `translateX(calc(-50% + ${(ballPosition - 1) * 172}px))`,
+                    width: 'clamp(40px, 8vw, 50px)',
+                    height: '400px',
+                    background: `linear-gradient(to bottom, 
+                      ${wingShackTheme.colors.secondary}40 0%, 
+                      ${wingShackTheme.colors.secondary}20 50%, 
+                      transparent 100%)`,
+                    borderRadius: '50%',
+                    zIndex: 99,
+                    pointerEvents: 'none',
+                  }}
+                />
+                {/* Highlight on target cup */}
+                <motion.div
+                  key="cup-highlight"
+                  initial={{ 
+                    scale: 0.8,
+                    opacity: 0,
+                  }}
+                  animate={{ 
+                    scale: [0.8, 1.1, 1],
+                    opacity: [0, 0.5, 0.3],
+                  }}
+                  exit={{ 
+                    opacity: 0,
+                  }}
+                  transition={{ 
+                    duration: 2,
+                    delay: 0.5,
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: `translate(calc(-50% + ${(ballPosition - 1) * 172}px), -50%)`,
+                    width: 'clamp(100px, 18vw, 160px)',
+                    height: 'clamp(120px, 22vw, 180px)',
+                    borderRadius: '0 0 20px 20px',
+                    border: `3px solid ${wingShackTheme.colors.secondary}`,
+                    boxShadow: `0 0 30px ${wingShackTheme.colors.secondary}50, inset 0 0 20px ${wingShackTheme.colors.secondary}30`,
+                    zIndex: 98,
+                    pointerEvents: 'none',
+                  }}
+                />
+              </>
             )}
           </AnimatePresence>
 

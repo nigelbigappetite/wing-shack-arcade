@@ -31,27 +31,24 @@ export default function ThreeCupPage() {
         gap: 'clamp(8px, 2vw, 12px)',
       }}
     >
-      {/* Header with Logo - Compact for Mobile */}
-      <GameCard elevated glow style={{ marginTop: 'clamp(8px, 2vw, 16px)' }}>
-        <Link
-          href="/"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 'clamp(4px, 1vw, 8px)',
-            textDecoration: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          <WingShackLogo size="sm" showText={false} />
-        </Link>
-      </GameCard>
+      {/* Header with Logo - Flat, no box */}
+      <Link
+        href="/"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: 'clamp(8px, 2vw, 16px)',
+          textDecoration: 'none',
+          cursor: 'pointer',
+        }}
+      >
+        <WingShackLogo size="sm" showText={false} />
+      </Link>
 
       {/* Game Container */}
       <GameCard
         elevated
-        glow
         style={{
           width: '100%',
           maxWidth: '1000px',
