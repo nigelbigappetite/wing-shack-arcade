@@ -151,7 +151,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     setTimeout(() => {
       setShowBallPlacement(false);
       startShuffling(targetCup);
-    }, 2200); // 2.2 seconds for elaborate placement animation
+    }, 1100); // 1.1 seconds for simple drop animation
   }, [startShuffling]);
 
   // Shuffle animation with actual position swapping
@@ -409,94 +409,43 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
             minHeight: 'clamp(120px, 22vw, 185px)', // Cup height + label space
           }}
         >
-          {/* Elaborate ball placement animation - clear and engaging */}
+          {/* Simple smooth ball drop from mascot to cup */}
           <AnimatePresence>
             {showBallPlacement && (
-              <>
-                {/* Ball dropping from above with multiple stages - lands inside cup */}
-                <motion.div
-                  key="ball-placement"
-                  initial={{ 
-                    y: -250,
-                    scale: 0.3,
-                    opacity: 0,
-                    rotate: 0,
-                  }}
-                  animate={{ 
-                    // Cups are aligned at flex-end (bottom), ball should match result ball position
-                    // Result ball is at: bottom: clamp(15px, 2.5vw, 25px) from cup bottom
-                    // Cup height: clamp(100px, 18vw, 160px)
-                    // From top of container: container height - cup height + ball offset
-                    // Using relative positioning: drop to match result ball position
-                    y: [null, -100, 30, 50, 65], // Drop from above, settle at bottom of cup (matching result ball)
-                    scale: [0.3, 0.8, 1.1, 0.95, 0.85], // Scale to fit inside cup (match result ball size)
-                    opacity: [0, 0.5, 1, 1, 1],
-                    rotate: [0, 180, 360, 360, 360],
-                  }}
-                  exit={{ 
-                    y: 140,
-                    scale: 0.5,
-                    opacity: 0,
-                  }}
-                  transition={{ 
-                    duration: 2,
-                    times: [0, 0.3, 0.7, 0.9, 1],
-                    ease: [
-                      [0.25, 0.1, 0.25, 1], // Slow start
-                      [0.42, 0, 1, 1],      // Acceleration
-                      [0.34, 1.56, 0.64, 1], // Bounce
-                      [0.68, -0.55, 0.27, 1.55], // Settle
-                      [0.68, -0.55, 0.27, 1.55], // Final settle
-                    ],
-                  }}
-                  style={{
-                    position: 'absolute',
-                    top: 0, // Start from top of container
-                    left: '50%',
-                    transform: `translateX(calc(-50% + ${(ballPosition - 1) * 172}px))`,
-                    width: 'clamp(35px, 7vw, 50px)', // Match the size of ball shown in results
-                    height: 'clamp(35px, 7vw, 50px)',
-                    borderRadius: '50%',
-                    backgroundColor: wingShackTheme.colors.secondary,
-                    boxShadow: `0 8px 24px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2)`,
-                    border: `4px solid ${wingShackTheme.colors.secondaryLight}`,
-                    zIndex: 100,
-                    pointerEvents: 'none',
-                  }}
-                />
-                {/* Highlight on target cup */}
-                <motion.div
-                  key="cup-highlight"
-                  initial={{ 
-                    scale: 0.8,
-                    opacity: 0,
-                  }}
-                  animate={{ 
-                    scale: [0.8, 1.1, 1],
-                    opacity: [0, 0.5, 0.3],
-                  }}
-                  exit={{ 
-                    opacity: 0,
-                  }}
-                  transition={{ 
-                    duration: 2,
-                    delay: 0.5,
-                  }}
-                  style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: `translate(calc(-50% + ${(ballPosition - 1) * 172}px), -50%)`,
-                    width: 'clamp(100px, 18vw, 160px)',
-                    height: 'clamp(120px, 22vw, 180px)',
-                    borderRadius: '0 0 20px 20px',
-                    border: `3px solid ${wingShackTheme.colors.secondary}`,
-                    boxShadow: `0 0 30px ${wingShackTheme.colors.secondary}50, inset 0 0 20px ${wingShackTheme.colors.secondary}30`,
-                    zIndex: 98,
-                    pointerEvents: 'none',
-                  }}
-                />
-              </>
+              <motion.div
+                key="ball-placement"
+                initial={{ 
+                  y: -120, // Start near mascot position (above cups)
+                  scale: 0.8,
+                  opacity: 0,
+                }}
+                animate={{ 
+                  y: 65, // Drop to final position inside cup
+                  scale: 0.85, // Match result ball size
+                  opacity: 1,
+                }}
+                exit={{ 
+                  opacity: 0,
+                }}
+                transition={{ 
+                  duration: 1,
+                  ease: [0.25, 0.46, 0.45, 0.94], // Smooth ease-in-out
+                }}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: '50%',
+                  transform: `translateX(calc(-50% + ${(ballPosition - 1) * 172}px))`,
+                  width: 'clamp(35px, 7vw, 50px)',
+                  height: 'clamp(35px, 7vw, 50px)',
+                  borderRadius: '50%',
+                  backgroundColor: wingShackTheme.colors.secondary,
+                  boxShadow: `0 4px 12px rgba(0, 0, 0, 0.2)`,
+                  border: `3px solid ${wingShackTheme.colors.secondaryLight}`,
+                  zIndex: 100,
+                  pointerEvents: 'none',
+                }}
+              />
             )}
           </AnimatePresence>
 
