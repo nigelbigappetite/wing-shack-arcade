@@ -65,10 +65,10 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     }
 
     // Generate shuffle sequence - actual swaps
-    // Calculate number of swaps needed for ~25 seconds total (slower for easier tracking)
-    // Start slow (1200ms), speed up to moderate (400ms), average ~600ms per swap
-    // For 25 seconds: ~40 swaps
-    const maxShuffles = 35 + Math.floor(Math.random() * 10); // 35-45 shuffles for ~25 seconds
+    // Calculate number of swaps needed for ~20 seconds total (slower speeds for easier tracking)
+    // Start slow (1200ms), speed up to moderate (400ms), average ~500ms per swap
+    // For 20 seconds: ~40 swaps
+    const maxShuffles = 35 + Math.floor(Math.random() * 10); // 35-45 shuffles for ~20 seconds
     const sequence: Array<{ from: number; to: number }> = [];
     let currentPositions = [0, 1, 2];
 
@@ -88,18 +88,18 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     shuffleSequenceRef.current = sequence;
 
     // Animate shuffling with position swaps - start slow, gradually speed up
-    // Total duration should be ~25 seconds (slower for easier tracking)
-    const totalDuration = 25000; // 25 seconds in milliseconds
-    const fadeOutStart = 0.85; // Start fading out at 85% of shuffle (last ~4 seconds)
+    // Total duration should be ~20 seconds (slower speeds for easier tracking)
+    const totalDuration = 20000; // 20 seconds in milliseconds
+    const fadeOutStart = 0.85; // Start fading out at 85% of shuffle (last ~3 seconds)
     
     const getSwapDelay = (swapIndex: number, totalSwaps: number) => {
       // Start slow (1200ms), gradually speed up to moderate (400ms)
       const progress = swapIndex / totalSwaps;
       const baseDelay = 1200 - (progress * 800); // 1200ms -> 400ms
       
-      // Adjust to ensure total duration is approximately 25 seconds
+      // Adjust to ensure total duration is approximately 20 seconds
       const averageDelay = totalDuration / totalSwaps;
-      const adjustedDelay = Math.max(300, Math.min(1200, baseDelay * (averageDelay / 600)));
+      const adjustedDelay = Math.max(300, Math.min(1200, baseDelay * (averageDelay / 500)));
       
       return adjustedDelay;
     };
