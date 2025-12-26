@@ -593,10 +593,11 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
                   color: '#000',
                   fontSize: 'clamp(14px, 3vw, 18px)',
                   fontFamily: wingShackTheme.typography.fontFamily.body,
+                  whiteSpace: 'pre-line',
                 }}
               >
                 {won
-                  ? "You found the ball! You're in the top 6% of players with natural tracking instinct."
+                  ? "You found the ball!\nYou're in the top 6% of players with natural instinct."
                   : "That round was brutal. Try again. Very few get it first time..."}
               </p>
             </motion.div>
