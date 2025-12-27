@@ -31,13 +31,23 @@ export default function SpinTheWingPage() {
       }}
     >
       {/* Header with Logo */}
-      <GameCard elevated glow style={{ marginTop: wingShackTheme.spacing.xl }}>
+      <GameCard 
+        elevated 
+        glow 
+        style={{ 
+          marginTop: wingShackTheme.spacing.xl,
+          width: '100%',
+          maxWidth: '1000px',
+          margin: '0 auto',
+        }}
+      >
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             gap: wingShackTheme.spacing.md,
+            padding: wingShackTheme.spacing.lg,
           }}
         >
           <WingShackLogo size="lg" showText={false} />
@@ -74,6 +84,7 @@ export default function SpinTheWingPage() {
         style={{
           width: '100%',
           maxWidth: '1000px',
+          margin: '0 auto',
           padding: wingShackTheme.spacing.xl,
         }}
       >

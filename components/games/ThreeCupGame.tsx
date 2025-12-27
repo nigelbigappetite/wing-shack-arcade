@@ -396,14 +396,6 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
           >
             <div
               style={{
-                fontSize: 'clamp(64px, 10vw, 96px)',
-                marginBottom: 'clamp(8px, 1.5vw, 16px)',
-              }}
-            >
-              🎯
-            </div>
-            <div
-              style={{
                 fontFamily: wingShackTheme.typography.fontFamily.display,
                 fontSize: 'clamp(24px, 4vw, 32px)',
                 fontWeight: wingShackTheme.typography.fontWeight.bold,
@@ -420,36 +412,10 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
                 color: wingShackTheme.colors.textSecondary,
                 textAlign: 'center',
                 maxWidth: '400px',
-                marginBottom: 'clamp(16px, 3vw, 24px)',
               }}
             >
               Press start and follow the ball.
             </div>
-            <motion.button
-              onClick={() => {
-                setIsGameActive(true);
-                shuffleCups();
-              }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              style={{
-                padding: 'clamp(12px, 2vw, 16px) clamp(32px, 5vw, 48px)',
-                backgroundColor: wingShackTheme.colors.primary,
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: wingShackTheme.borderRadius.lg,
-                fontFamily: wingShackTheme.typography.fontFamily.display,
-                fontSize: 'clamp(18px, 3vw, 24px)',
-                fontWeight: wingShackTheme.typography.fontWeight.bold,
-                letterSpacing: '2px',
-                cursor: 'pointer',
-                boxShadow: `0 6px 20px ${wingShackTheme.colors.primary}80`,
-                transition: 'all 0.3s ease',
-                opacity: 1,
-              }}
-            >
-              START
-            </motion.button>
           </motion.div>
         )}
 

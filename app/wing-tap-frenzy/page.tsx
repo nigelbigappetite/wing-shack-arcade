@@ -52,6 +52,7 @@ export default function WingTapFrenzyPage() {
         style={{
           width: '100%',
           maxWidth: '1000px',
+          margin: '0 auto',
           padding: 'clamp(8px, 2vw, 16px)',
           overflow: 'hidden',
         }}

@@ -274,6 +274,39 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
                 {showHowToPlay ? '✕' : 'ℹ️ How to Play'}
               </button>
 
+              {/* Leaderboard Button - Only show for Snake game */}
+              {title === 'Snake' && (
+                <Link
+                  href="/snake/leaderboard"
+                  style={{
+                    textDecoration: 'none',
+                  }}
+                >
+                  <button
+                    style={{
+                      padding: 'clamp(6px, 1.5vw, 8px) clamp(8px, 2vw, 10px)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      color: wingShackTheme.colors.text,
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: 'clamp(10px, 2vw, 12px)',
+                      fontWeight: 500,
+                      transition: 'all 0.2s',
+                      whiteSpace: 'nowrap',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = wingShackTheme.colors.secondary + '40';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    }}
+                  >
+                    🏆 Leaderboard
+                  </button>
+                </Link>
+              )}
+
               {/* Sound Toggle */}
               <button
                 onClick={toggleSound}
@@ -429,6 +462,9 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
             position: 'relative',
             overflow: 'hidden',
             backgroundColor: '#0f0f15',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           {/* Pause Overlay */}

@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameLifecycle } from '@/hooks/useGameLifecycle';
 import GameLifecycleWrapper from '@/components/GameLifecycleWrapper';
 import { wingShackTheme } from '@/theme/wingShackTheme';
+import { useGameShellContext } from '@/components/GameShell';
 
 interface SnakeProps {
   onScore?: (score: number) => void;
+  onGameOver?: (finalScore: number) => void;
 }
 
 type Direction = 'up' | 'down' | 'left' | 'right';
@@ -24,7 +26,8 @@ const SPEED_INCREASE = 0.9; // Multiply by this each time
 const SPEED_INCREASE_INTERVAL = 5; // Every 5 wings
 const MAX_SPEED = 50; // Minimum ms per move (cap)
 
-const Snake: React.FC<SnakeProps> = ({ onScore }) => {
+const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
+  const { soundEnabled } = useGameShellContext();
   const [gameState, setGameState] = useState<GameState>('idle');
   const [snake, setSnake] = useState<Position[]>([]);
   const [food, setFood] = useState<Position | null>(null);
@@ -40,6 +43,7 @@ const Snake: React.FC<SnakeProps> = ({ onScore }) => {
   const lastMoveTimeRef = useRef<number>(0);
   const directionRef = useRef<Direction>('right');
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   // Initialize snake in center
   const initializeSnake = useCallback(() => {
@@ -111,20 +115,27 @@ const Snake: React.FC<SnakeProps> = ({ onScore }) => {
 
       // Check wall collision
       if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
+        const finalScore = score;
         setGameState('gameOver');
+        onGameOver?.(finalScore);
         return prevSnake;
       }
 
       // Check self collision
       const bodySet = new Set(prevSnake.slice(1).map((p) => `${p.x},${p.y}`));
       if (bodySet.has(`${head.x},${head.y}`)) {
+        const finalScore = score;
         setGameState('gameOver');
+        onGameOver?.(finalScore);
         return prevSnake;
       }
 
       // Check food collision
       const newSnake = [head, ...prevSnake];
       if (food && head.x === food.x && head.y === food.y) {
+        // Play classic Nokia beep sound
+        playNokiaBeep();
+
         // Ate food - grow snake, generate new food, increase score
         const newScore = score + 1;
         const newWingsEaten = wingsEaten + 1;
@@ -391,6 +402,67 @@ const Snake: React.FC<SnakeProps> = ({ onScore }) => {
     }
   }, []);
 
+  // Detect touch device
+  useEffect(() => {
+    const checkTouchDevice = () => {
+      setIsTouchDevice(
+        'ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        (navigator as any).msMaxTouchPoints > 0
+      );
+    };
+    checkTouchDevice();
+    window.addEventListener('resize', checkTouchDevice);
+    return () => window.removeEventListener('resize', checkTouchDevice);
+  }, []);
+
+  // Classic Nokia Snake beep sound using Web Audio API
+  const playNokiaBeep = useCallback(() => {
+    if (!soundEnabled) return;
+    
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      const audioContext = new AudioContext();
+      
+      // Create oscillator for classic Nokia beep
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      // Classic Nokia Snake sound: short beep at ~800Hz
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      
+      // Envelope: quick attack, short sustain, quick release
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01); // Attack
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05); // Sustain
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.1); // Release
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (error) {
+      console.warn('Failed to play Nokia beep:', error);
+    }
+  }, [soundEnabled]);
+
+  // Handle d-pad button press
+  const handleDirectionButton = useCallback(
+    (dir: Direction) => {
+      // Allow direction change even when idle (will be applied when game starts)
+      if (gameState === 'idle') {
+        setNextDirection(dir);
+        directionRef.current = dir;
+        setDirection(dir);
+      } else if (gameState === 'running' && !isReverseDirection(directionRef.current, dir)) {
+        setNextDirection(dir);
+      }
+    },
+    [gameState, isReverseDirection]
+  );
+
   // Start game
   const startGame = useCallback(() => {
     const initialSnake = initializeSnake();
@@ -451,16 +523,18 @@ const Snake: React.FC<SnakeProps> = ({ onScore }) => {
         style={{
           width: '100%',
           height: '100%',
-          minHeight: 'clamp(400px, 60vh, 600px)',
+          minHeight: isTouchDevice ? 'clamp(400px, 60vh, 600px)' : 'clamp(300px, 50vh, 450px)',
           position: 'relative',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
-          padding: 'clamp(16px, 3vw, 24px)',
+          justifyContent: 'flex-start',
+          padding: isTouchDevice ? 'clamp(12px, 2vw, 20px)' : 'clamp(8px, 1vw, 12px)',
           backgroundColor: wingShackTheme.colors.backgroundCard,
           borderRadius: wingShackTheme.borderRadius.lg,
-          gap: 'clamp(12px, 2vw, 16px)',
+          gap: isTouchDevice ? 'clamp(8px, 1.5vw, 12px)' : 'clamp(4px, 0.8vw, 8px)',
+          overflow: 'hidden',
+          boxSizing: 'border-box',
         }}
       >
         {/* Score Display */}
@@ -468,24 +542,26 @@ const Snake: React.FC<SnakeProps> = ({ onScore }) => {
           <div
             style={{
               display: 'flex',
-              gap: 'clamp(16px, 3vw, 24px)',
+              gap: isTouchDevice ? 'clamp(8px, 1.5vw, 12px)' : 'clamp(6px, 1vw, 10px)',
               alignItems: 'center',
               justifyContent: 'center',
               flexWrap: 'wrap',
+              flexShrink: 0,
+              padding: isTouchDevice ? 'clamp(2px, 0.5vw, 4px)' : '0',
             }}
           >
             <div
               style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                padding: 'clamp(6px, 1.2vw, 10px) clamp(12px, 2vw, 18px)',
-                borderRadius: wingShackTheme.borderRadius.lg,
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                padding: 'clamp(4px, 1vw, 8px) clamp(10px, 1.5vw, 14px)',
+                borderRadius: wingShackTheme.borderRadius.md,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               }}
             >
               <div
                 style={{
                   fontFamily: wingShackTheme.typography.fontFamily.display,
-                  fontSize: 'clamp(14px, 2.5vw, 20px)',
+                  fontSize: 'clamp(12px, 2vw, 18px)',
                   fontWeight: wingShackTheme.typography.fontWeight.bold,
                   color: wingShackTheme.colors.primary,
                 }}
@@ -497,15 +573,15 @@ const Snake: React.FC<SnakeProps> = ({ onScore }) => {
               <div
                 style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                  padding: 'clamp(6px, 1.2vw, 10px) clamp(12px, 2vw, 18px)',
-                  borderRadius: wingShackTheme.borderRadius.lg,
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  padding: 'clamp(4px, 1vw, 8px) clamp(10px, 1.5vw, 14px)',
+                  borderRadius: wingShackTheme.borderRadius.md,
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                 }}
               >
                 <div
                   style={{
                     fontFamily: wingShackTheme.typography.fontFamily.display,
-                    fontSize: 'clamp(14px, 2.5vw, 20px)',
+                    fontSize: 'clamp(12px, 2vw, 18px)',
                     fontWeight: wingShackTheme.typography.fontWeight.bold,
                     color: wingShackTheme.colors.secondary,
                   }}
@@ -522,9 +598,11 @@ const Snake: React.FC<SnakeProps> = ({ onScore }) => {
           style={{
             position: 'relative',
             width: '100%',
-            maxWidth: 'clamp(300px, 80vw, 520px)',
+            maxWidth: isTouchDevice ? 'clamp(280px, 75vw, 360px)' : 'clamp(320px, 50vw, 400px)',
             aspectRatio: '1',
             touchAction: 'none', // Prevent scrolling during swipe
+            flexShrink: 0,
+            margin: '0 auto',
           }}
         >
           <canvas
@@ -540,6 +618,166 @@ const Snake: React.FC<SnakeProps> = ({ onScore }) => {
             }}
           />
         </div>
+
+        {/* D-Pad for Mobile - Always visible on touch devices */}
+        {isTouchDevice && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 'clamp(4px, 1vw, 8px)',
+              flexShrink: 0,
+              padding: 'clamp(4px, 1vw, 8px)',
+            }}
+          >
+            {/* Up Button */}
+            <motion.button
+              onTouchStart={(e) => {
+                e.preventDefault();
+                handleDirectionButton('up');
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleDirectionButton('up');
+              }}
+              style={{
+                width: 'clamp(60px, 15vw, 80px)',
+                height: 'clamp(50px, 12vw, 65px)',
+                backgroundColor: wingShackTheme.colors.primary,
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: wingShackTheme.borderRadius.md,
+                fontFamily: wingShackTheme.typography.fontFamily.display,
+                fontSize: 'clamp(20px, 4vw, 28px)',
+                fontWeight: wingShackTheme.typography.fontWeight.bold,
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                touchAction: 'none',
+                WebkitTapHighlightColor: 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              whileTap={{ scale: 0.9 }}
+            >
+              ↑
+            </motion.button>
+
+            {/* Middle Row: Left, Center (empty), Right */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 'clamp(8px, 1.5vw, 12px)',
+              }}
+            >
+              {/* Left Button */}
+              <motion.button
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  handleDirectionButton('left');
+                }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleDirectionButton('left');
+                }}
+                style={{
+                  width: 'clamp(60px, 15vw, 80px)',
+                  height: 'clamp(50px, 12vw, 65px)',
+                  backgroundColor: wingShackTheme.colors.primary,
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: wingShackTheme.borderRadius.md,
+                  fontFamily: wingShackTheme.typography.fontFamily.display,
+                  fontSize: 'clamp(20px, 4vw, 28px)',
+                  fontWeight: wingShackTheme.typography.fontWeight.bold,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                  touchAction: 'none',
+                  WebkitTapHighlightColor: 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                whileTap={{ scale: 0.9 }}
+              >
+                ←
+              </motion.button>
+
+              {/* Spacer */}
+              <div style={{ width: 'clamp(60px, 15vw, 80px)' }} />
+
+              {/* Right Button */}
+              <motion.button
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  handleDirectionButton('right');
+                }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleDirectionButton('right');
+                }}
+                style={{
+                  width: 'clamp(60px, 15vw, 80px)',
+                  height: 'clamp(50px, 12vw, 65px)',
+                  backgroundColor: wingShackTheme.colors.primary,
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: wingShackTheme.borderRadius.md,
+                  fontFamily: wingShackTheme.typography.fontFamily.display,
+                  fontSize: 'clamp(20px, 4vw, 28px)',
+                  fontWeight: wingShackTheme.typography.fontWeight.bold,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                  touchAction: 'none',
+                  WebkitTapHighlightColor: 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                whileTap={{ scale: 0.9 }}
+              >
+                →
+              </motion.button>
+            </div>
+
+            {/* Down Button */}
+            <motion.button
+              onTouchStart={(e) => {
+                e.preventDefault();
+                handleDirectionButton('down');
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleDirectionButton('down');
+              }}
+              style={{
+                width: 'clamp(60px, 15vw, 80px)',
+                height: 'clamp(50px, 12vw, 65px)',
+                backgroundColor: wingShackTheme.colors.primary,
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: wingShackTheme.borderRadius.md,
+                fontFamily: wingShackTheme.typography.fontFamily.display,
+                fontSize: 'clamp(20px, 4vw, 28px)',
+                fontWeight: wingShackTheme.typography.fontWeight.bold,
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                touchAction: 'none',
+                WebkitTapHighlightColor: 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              whileTap={{ scale: 0.9 }}
+            >
+              ↓
+            </motion.button>
+          </div>
+        )}
 
         {/* Game Over Overlay */}
         <AnimatePresence>
@@ -658,16 +896,16 @@ const Snake: React.FC<SnakeProps> = ({ onScore }) => {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 'clamp(16px, 3vw, 24px)',
+              gap: isTouchDevice ? 'clamp(16px, 3vw, 24px)' : 'clamp(8px, 1.5vw, 16px)',
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               zIndex: 15,
-              padding: 'clamp(20px, 4vw, 40px)',
+              padding: isTouchDevice ? 'clamp(20px, 4vw, 40px)' : 'clamp(12px, 2vw, 20px)',
             }}
           >
             <div
               style={{
-                fontSize: 'clamp(64px, 10vw, 96px)',
-                marginBottom: 'clamp(8px, 1.5vw, 16px)',
+                fontSize: isTouchDevice ? 'clamp(64px, 10vw, 96px)' : 'clamp(48px, 6vw, 64px)',
+                marginBottom: isTouchDevice ? 'clamp(8px, 1.5vw, 16px)' : 'clamp(4px, 0.8vw, 8px)',
               }}
             >
               🐍
@@ -675,7 +913,7 @@ const Snake: React.FC<SnakeProps> = ({ onScore }) => {
             <div
               style={{
                 fontFamily: wingShackTheme.typography.fontFamily.display,
-                fontSize: 'clamp(24px, 4vw, 32px)',
+                fontSize: isTouchDevice ? 'clamp(24px, 4vw, 32px)' : 'clamp(20px, 3vw, 28px)',
                 fontWeight: wingShackTheme.typography.fontWeight.bold,
                 color: wingShackTheme.colors.primary,
                 textAlign: 'center',
@@ -686,7 +924,7 @@ const Snake: React.FC<SnakeProps> = ({ onScore }) => {
             <div
               style={{
                 fontFamily: wingShackTheme.typography.fontFamily.body,
-                fontSize: 'clamp(14px, 2vw, 18px)',
+                fontSize: isTouchDevice ? 'clamp(14px, 2vw, 18px)' : 'clamp(12px, 1.5vw, 16px)',
                 color: wingShackTheme.colors.textSecondary,
                 textAlign: 'center',
                 maxWidth: '400px',
