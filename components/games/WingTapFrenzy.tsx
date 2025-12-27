@@ -20,8 +20,8 @@ interface WingTapFrenzyProps {
 
 const LEVEL_CONFIG = [
   { target: 20, duration: 10, spawnMin: 1000, spawnMax: 2000, wingLifetime: 1000 }, // Level 1: 20 wings in 10s, 1-2s spawn, 1s lifetime
-  { target: 30, duration: 10, spawnMin: 500, spawnMax: 1200, wingLifetime: 600 }, // Level 2: 30 wings in 10s, 0.5-1.2s spawn, 0.6s lifetime
-  { target: 40, duration: 15, spawnMin: 500, spawnMax: 1200, wingLifetime: 600 }, // Level 3: 40 wings in 15s, 0.5-1.2s spawn, 0.6s lifetime, has negative items
+  { target: 40, duration: 10, spawnMin: 500, spawnMax: 1200, wingLifetime: 600 }, // Level 2: 40 wings in 10s, 0.5-1.2s spawn, 0.6s lifetime (faster)
+  { target: 40, duration: 15, spawnMin: 500, spawnMax: 1200, wingLifetime: 600 }, // Level 3: 40 wings in 15s, 0.5-1.2s spawn, 0.6s lifetime, has negative items (broccoli)
 ];
 
 const MAX_WINGS = 2; // Max 1-2 wings visible at once
@@ -38,6 +38,9 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
   const [showLevelMessage, setShowLevelMessage] = useState(false);
   const [levelMessage, setLevelMessage] = useState('');
   const [showTryAgain, setShowTryAgain] = useState(false);
+  const [showEndScore, setShowEndScore] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
+  const [floatingMinusOnes, setFloatingMinusOnes] = useState<Array<{ id: string; x: number; y: number }>>([]);
   const negativeSpawnCounterRef = useRef<number>(0); // Track spawns for negative item frequency
 
   const gameContainerRef = useRef<HTMLDivElement>(null);
@@ -166,6 +169,24 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
           onScore?.(newScore);
           return newScore;
         });
+        // Show floating -1 animation
+        const container = gameContainerRef.current;
+        if (container) {
+          const rect = container.getBoundingClientRect();
+          const floatingId = `minus-${Date.now()}-${Math.random()}`;
+          setFloatingMinusOnes((prev) => [
+            ...prev,
+            {
+              id: floatingId,
+              x: tappedItem.x - rect.left,
+              y: tappedItem.y - rect.top,
+            },
+          ]);
+          // Remove after animation
+          setTimeout(() => {
+            setFloatingMinusOnes((prev) => prev.filter((f) => f.id !== floatingId));
+          }, 700);
+        }
       } else {
         // Add 1 point
         setScore((prev) => {
@@ -213,23 +234,41 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
       // Check if target was met - use ref for accurate score
       const target = levelConfig.target;
       const currentScore = scoreRef.current;
-      if (currentScore >= target) {
-        // Level complete - check if there's a next level
-        if (currentLevel < LEVEL_CONFIG.length - 1) {
-          setLevelMessage(`LEVEL ${currentLevel + 1} COMPLETE!`);
-          setShowLevelMessage(true);
-          // Don't auto-advance - wait for button click
+      
+      // Show score immediately
+      setFinalScore(currentScore);
+      setShowEndScore(true);
+      
+      // Wait 800-1200ms before showing message
+      setTimeout(() => {
+        if (currentScore >= target) {
+          // Level complete
+          if (currentLevel === 0) {
+            // Level 1 Complete
+            setLevelMessage('Nice start.\nYou\'re quicker than the average player.');
+            setShowLevelMessage(true);
+          } else if (currentLevel === 1) {
+            // Level 2 Complete
+            setLevelMessage('Level 2 Complete\nThat speed catches most people out.');
+            setShowLevelMessage(true);
+          } else {
+            // Level 3 Complete - go directly to Game Complete
+            setLevelMessage('GAME_COMPLETE');
+            setShowLevelMessage(true);
+          }
         } else {
-          // All levels complete (Level 3)
-          setLevelMessage('GAME COMPLETE, YOU WIN!');
+          // Failed to meet target
+          if (currentLevel === 0) {
+            setLevelMessage('Just short.\nGet the rhythm — try again.');
+          } else if (currentLevel === 1) {
+            setLevelMessage('That jump is tough.\nMost players drop off here.');
+          } else {
+            setLevelMessage('So close.\nThe broccoli catches people out.');
+          }
           setShowLevelMessage(true);
+          setShowTryAgain(true);
         }
-      } else {
-        // Failed to meet target
-        setLevelMessage(`TRY AGAIN!\nTarget: ${target}\nYou got: ${currentScore}`);
-        setShowLevelMessage(true);
-        setShowTryAgain(true);
-      }
+      }, 1000);
       
       // Clean up all timers
       if (animationFrameRef.current) {
@@ -344,6 +383,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
     setCurrentLevel(0);
     setShowLevelMessage(false);
     setShowTryAgain(false);
+    setShowEndScore(false);
     setTimeRemaining(LEVEL_CONFIG[0].duration);
     setWings([]);
     pausedTimeRef.current = 0;
@@ -530,6 +570,33 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
           </div>
         )}
 
+        {/* Floating -1 Animations */}
+        <AnimatePresence>
+          {floatingMinusOnes.map((minusOne) => (
+            <motion.div
+              key={minusOne.id}
+              initial={{ opacity: 1, y: 0, scale: 1 }}
+              animate={{ opacity: 0, y: -60, scale: 1.2 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.7, ease: 'easeOut' }}
+              style={{
+                position: 'absolute',
+                left: `${minusOne.x}px`,
+                top: `${minusOne.y}px`,
+                fontFamily: wingShackTheme.typography.fontFamily.display,
+                fontSize: 'clamp(32px, 5vw, 48px)',
+                fontWeight: wingShackTheme.typography.fontWeight.bold,
+                color: wingShackTheme.colors.error,
+                pointerEvents: 'none',
+                zIndex: 30,
+                textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)',
+              }}
+            >
+              -1
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
         {/* Wings */}
         <AnimatePresence>
           {wings.map((wing) => (
@@ -582,7 +649,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                   pointerEvents: 'none',
                 }}
               >
-                {wing.isNegative ? '🌶️' : '🍗'}
+                {wing.isNegative ? '🥦' : '🍗'}
               </div>
             </motion.div>
           ))}
@@ -590,7 +657,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
 
         {/* Level Message Overlay */}
         <AnimatePresence>
-          {showLevelMessage && (
+          {(showEndScore || showLevelMessage) && levelMessage !== 'GAME_COMPLETE' && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -611,31 +678,72 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                 padding: 'clamp(20px, 4vw, 40px)',
               }}
             >
+              {/* Score Display - always show when overlay is visible */}
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.1 }}
+                transition={{ delay: 0.05 }}
                 style={{
                   fontFamily: wingShackTheme.typography.fontFamily.display,
-                  fontSize: 'clamp(32px, 5vw, 48px)',
+                  fontSize: 'clamp(24px, 4vw, 32px)',
                   fontWeight: wingShackTheme.typography.fontWeight.bold,
-                  color: levelMessage.includes('LOSE') || levelMessage.includes('TRY AGAIN') ? wingShackTheme.colors.error : '#00ff00',
+                  color: '#ffffff',
                   textAlign: 'center',
-                  whiteSpace: 'pre-line',
-                  lineHeight: 1.4,
+                  marginBottom: showLevelMessage ? 'clamp(8px, 1.5vw, 16px)' : 0,
                 }}
               >
-                {levelMessage}
+                Score: {finalScore} / {LEVEL_CONFIG[currentLevel].target}
               </motion.div>
+
+              {/* Title - only show when message is ready */}
+              {showLevelMessage && (
+                <>
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                    style={{
+                      fontFamily: wingShackTheme.typography.fontFamily.display,
+                      fontSize: 'clamp(32px, 5vw, 48px)',
+                      fontWeight: wingShackTheme.typography.fontWeight.bold,
+                      color: showTryAgain ? wingShackTheme.colors.error : '#00ff00',
+                      textAlign: 'center',
+                      whiteSpace: 'pre-line',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {levelMessage.split('\n')[0]}
+                  </motion.div>
+
+                  {/* Body */}
+                  {levelMessage.includes('\n') && (
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.15 }}
+                      style={{
+                        fontFamily: wingShackTheme.typography.fontFamily.body,
+                        fontSize: 'clamp(18px, 3vw, 24px)',
+                        color: '#ffffff',
+                        textAlign: 'center',
+                        opacity: 0.9,
+                      }}
+                    >
+                      {levelMessage.split('\n')[1]}
+                    </motion.div>
+                  )}
+                </>
+              )}
               
               {/* Next Level Button - show when level complete and not all levels done */}
-              {levelMessage.includes('LEVEL') && levelMessage.includes('COMPLETE') && currentLevel < LEVEL_CONFIG.length - 1 && (
+              {!showTryAgain && currentLevel < LEVEL_CONFIG.length - 1 && (
                 <motion.button
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.3 }}
                   onClick={() => {
                     setShowLevelMessage(false);
+                    setShowEndScore(false);
                     // Advance to next level
                     const nextLevel = currentLevel + 1;
                     setCurrentLevel(nextLevel);
@@ -648,8 +756,6 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                     setWings([]);
                     // Start next level after state updates
                     setTimeout(() => {
-                      // Use startGame to properly initialize the next level
-                      // It will use the updated currentLevel from state
                       startGame();
                     }, 50);
                   }}
@@ -666,6 +772,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                     cursor: 'pointer',
                     boxShadow: `0 6px 20px ${wingShackTheme.colors.secondary}50`,
                     transition: 'all 0.3s ease',
+                    marginTop: 'clamp(16px, 3vw, 24px)',
                   }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -685,6 +792,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                     resetGame();
                     setShowLevelMessage(false);
                     setShowTryAgain(false);
+                    setShowEndScore(false);
                   }}
                   style={{
                     padding: 'clamp(12px, 2vw, 16px) clamp(32px, 5vw, 48px)',
@@ -699,6 +807,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                     cursor: 'pointer',
                     boxShadow: `0 6px 20px ${wingShackTheme.colors.primary}50`,
                     transition: 'all 0.3s ease',
+                    marginTop: 'clamp(16px, 3vw, 24px)',
                   }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -706,6 +815,111 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                   TRY AGAIN
                 </motion.button>
               )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Game Complete Overlay (Level 3 Success) */}
+        <AnimatePresence>
+          {showLevelMessage && levelMessage === 'GAME_COMPLETE' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.95)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 'clamp(16px, 3vw, 24px)',
+                zIndex: 25,
+                padding: 'clamp(20px, 4vw, 40px)',
+              }}
+            >
+              {/* Big Headline */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                style={{
+                  fontFamily: wingShackTheme.typography.fontFamily.display,
+                  fontSize: 'clamp(48px, 8vw, 72px)',
+                  fontWeight: wingShackTheme.typography.fontWeight.bold,
+                  color: '#00ff00',
+                  textAlign: 'center',
+                }}
+              >
+                Game Complete
+              </motion.div>
+
+              {/* Status Line */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                style={{
+                  fontFamily: wingShackTheme.typography.fontFamily.display,
+                  fontSize: 'clamp(24px, 4vw, 32px)',
+                  fontWeight: wingShackTheme.typography.fontWeight.bold,
+                  color: '#ffffff',
+                  textAlign: 'center',
+                }}
+              >
+                Only 9% of players finish all three levels.
+              </motion.div>
+
+              {/* Supporting Line */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                style={{
+                  fontFamily: wingShackTheme.typography.fontFamily.body,
+                  fontSize: 'clamp(18px, 3vw, 24px)',
+                  color: '#ffffff',
+                  textAlign: 'center',
+                  opacity: 0.9,
+                }}
+              >
+                That puts you in rare company.
+              </motion.div>
+
+              {/* Play Again Button */}
+              <motion.button
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                onClick={() => {
+                  resetGame();
+                  setShowLevelMessage(false);
+                  setShowEndScore(false);
+                }}
+                style={{
+                  padding: 'clamp(12px, 2vw, 16px) clamp(32px, 5vw, 48px)',
+                  backgroundColor: wingShackTheme.colors.secondary,
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: wingShackTheme.borderRadius.lg,
+                  fontFamily: wingShackTheme.typography.fontFamily.display,
+                  fontSize: 'clamp(18px, 3vw, 24px)',
+                  fontWeight: wingShackTheme.typography.fontWeight.bold,
+                  letterSpacing: '2px',
+                  cursor: 'pointer',
+                  boxShadow: `0 6px 20px ${wingShackTheme.colors.secondary}50`,
+                  transition: 'all 0.3s ease',
+                  marginTop: 'clamp(16px, 3vw, 24px)',
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Play Again
+              </motion.button>
             </motion.div>
           )}
         </AnimatePresence>
