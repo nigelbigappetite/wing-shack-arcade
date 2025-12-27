@@ -6,23 +6,26 @@ import Image from 'next/image';
 import { useGameLifecycle } from '@/hooks/useGameLifecycle';
 import GameLifecycleWrapper from '@/components/GameLifecycleWrapper';
 import { wingShackTheme } from '@/theme/wingShackTheme';
+import { useGameShellContext } from '@/components/GameShell';
 
 interface SauceSimonProps {
   onScore?: (score: number) => void;
 }
 
-// Sauce configuration
+// Sauce configuration with xylophone note frequencies (in Hz)
+// Using a pentatonic scale for pleasant sounds: C, D, E, G, A
 const SAUCES = [
-  { id: 'jarvs-tangy-buffalo', label: "Jarv's Tangy Buffalo", image: '/jarvs-tangy-buffalo.png' },
-  { id: 'flamin-hoisin', label: "Flamin' Hoisin", image: '/flamin-hoisin.png' },
-  { id: 'honey-mustard', label: 'Honey Mustard', image: '/honey-mustard.png' },
-  { id: 'mango-mazza', label: 'Mango Mazza', image: '/mango-mazza.png' },
+  { id: 'jarvs-tangy-buffalo', label: "Jarv's Tangy Buffalo", image: '/jarvs-tangy-buffalo.png', frequency: 523.25 }, // C5
+  { id: 'flamin-hoisin', label: "Flamin' Hoisin", image: '/flamin-hoisin.png', frequency: 587.33 }, // D5
+  { id: 'honey-mustard', label: 'Honey Mustard', image: '/honey-mustard.png', frequency: 659.25 }, // E5
+  { id: 'mango-mazza', label: 'Mango Mazza', image: '/mango-mazza.png', frequency: 783.99 }, // G5
 ];
 
 const FLASH_DURATION = 500; // ms
 const FLASH_GAP = 300; // ms between flashes
 
 const SauceSimon: React.FC<SauceSimonProps> = ({ onScore }) => {
+  const { soundEnabled } = useGameShellContext();
   const [sequence, setSequence] = useState<string[]>([]);
   const [userInput, setUserInput] = useState<string[]>([]);
   const [currentRound, setCurrentRound] = useState(0);
@@ -35,11 +38,48 @@ const SauceSimon: React.FC<SauceSimonProps> = ({ onScore }) => {
 
   const playbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const roundCompleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioUnlockedRef = useRef<boolean>(false);
 
   // Generate random sauce ID
   const getRandomSauce = useCallback(() => {
     return SAUCES[Math.floor(Math.random() * SAUCES.length)].id;
   }, []);
+
+  // Play xylophone note for a sauce
+  const playNote = useCallback((sauceId: string) => {
+    if (!soundEnabled || !audioContextRef.current) return;
+
+    const sauce = SAUCES.find((s) => s.id === sauceId);
+    if (!sauce) return;
+
+    try {
+      const audioContext = audioContextRef.current;
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      // Connect nodes
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      // Set frequency (xylophone note)
+      oscillator.frequency.value = sauce.frequency;
+      oscillator.type = 'sine'; // Sine wave for a clean xylophone-like sound
+
+      // Envelope: quick attack, short sustain, quick release
+      const now = audioContext.currentTime;
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01); // Quick attack
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3); // Quick decay/release
+
+      // Play the note
+      oscillator.start(now);
+      oscillator.stop(now + 0.3); // 300ms duration
+    } catch (error) {
+      // Silently fail if audio context is not available
+      console.warn('Audio playback error:', error);
+    }
+  }, [soundEnabled]);
 
   // Play the sequence
   const playSequence = useCallback((seq: string[]) => {
@@ -56,6 +96,7 @@ const SauceSimon: React.FC<SauceSimonProps> = ({ onScore }) => {
       }
 
       setActiveTile(seq[index]);
+      playNote(seq[index]); // Play sound for this sauce
       playbackTimeoutRef.current = setTimeout(() => {
         setActiveTile(null);
         index++;
@@ -97,6 +138,7 @@ const SauceSimon: React.FC<SauceSimonProps> = ({ onScore }) => {
     if (sauceId === expectedSauce) {
       // Correct tap
       setActiveTile(sauceId);
+      playNote(sauceId); // Play sound for user tap
       setTimeout(() => setActiveTile(null), FLASH_DURATION);
       
       const newUserInput = [...userInput, sauceId];
@@ -203,6 +245,57 @@ const SauceSimon: React.FC<SauceSimonProps> = ({ onScore }) => {
     onResume: resumeGame,
     onReset: resetGame,
   });
+
+  // Initialize audio context
+  useEffect(() => {
+    // Create audio context
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        audioContextRef.current = new AudioContextClass();
+      }
+    } catch (error) {
+      console.warn('AudioContext not supported:', error);
+    }
+
+    // Unlock audio on first user interaction
+    const unlockAudio = async () => {
+      if (!audioUnlockedRef.current && audioContextRef.current) {
+        try {
+          // Resume audio context (required for some browsers)
+          if (audioContextRef.current.state === 'suspended') {
+            await audioContextRef.current.resume();
+          }
+          // Play a silent sound to unlock
+          const oscillator = audioContextRef.current.createOscillator();
+          const gainNode = audioContextRef.current.createGain();
+          gainNode.gain.value = 0;
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContextRef.current.destination);
+          oscillator.start();
+          oscillator.stop(audioContextRef.current.currentTime + 0.001);
+          audioUnlockedRef.current = true;
+        } catch (error) {
+          // Silent fail
+        }
+      }
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+    };
+
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {
+          // Ignore errors on close
+        });
+      }
+    };
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
