@@ -48,7 +48,8 @@ export async function GET(request: NextRequest) {
       error: allError ? JSON.stringify(allError, null, 2) : null
     });
 
-    // Now fetch with filter
+    // Now fetch with filter - try multiple approaches
+    console.log('🔍 Attempting filtered query with .eq()');
     const { data, error } = await supabase
       .from('scores')
       .select('*')
@@ -65,24 +66,26 @@ export async function GET(request: NextRequest) {
       error: error ? JSON.stringify(error, null, 2) : null
     });
 
-    // If no data but we have data in table, check the game_id values
+    // If filtered query returns empty but we have data, try filtering client-side
+    let finalData = data;
     if ((!data || data.length === 0) && allData && allData.length > 0) {
-      const gameIds = allData.map((row: any) => row.game_id);
-      console.log('⚠️ No data with game_id=snake, but table has data. Game IDs found:', gameIds);
-      console.log('⚠️ Sample row from table:', allData[0]);
+      console.log('⚠️ Filtered query returned empty, trying client-side filter');
+      const filtered = allData
+        .filter((row: any) => row.game_id === 'snake')
+        .sort((a: any, b: any) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        })
+        .slice(0, 10);
       
-      // This suggests RLS is silently filtering rows
-      return NextResponse.json({ 
-        data: [],
-        debug: {
-          warning: 'RLS may be filtering results',
-          allDataCount: allData.length,
-          gameIdsFound: gameIds,
-          sampleRow: allData[0],
-          message: 'Query returned empty but table has data. Check RLS policies allow SELECT for anonymous users.'
-        }
+      console.log('📊 Client-side filtered result:', {
+        count: filtered.length,
+        data: filtered
       });
+      
+      finalData = filtered;
     }
+
 
     if (error) {
       console.error('Supabase error:', JSON.stringify(error, null, 2));
@@ -146,12 +149,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Return data with debug info
-    const response: any = { data: data || [] };
+    const response: any = { data: finalData || [] };
     
     // Always include debug info to help diagnose RLS issues
     response.debug = {
       queryResult: data?.length || 0,
+      clientSideFiltered: finalData?.length || 0,
       allDataCount: allData?.length || 0,
+      usedClientSideFilter: (!data || data.length === 0) && allData && allData.length > 0,
       hasError: false
     };
     
