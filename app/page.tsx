@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { wingShackTheme } from '@/theme/wingShackTheme';
 import WingShackLogo from '@/components/ui/WingShackLogo';
 import GameCard from '@/components/ui/GameCard';
@@ -35,6 +36,15 @@ const games: Game[] = [
     href: '/wing-tap-frenzy',
     color: wingShackTheme.colors.secondary,
     icon: '🍗',
+    category: 'Arcade',
+  },
+  {
+    id: 'sauce-simon',
+    title: 'SAUCE SIMON',
+    description: 'MEMORISE THE SAUCE SEQUENCE',
+    href: '/sauce-simon',
+    color: '#FF6B35',
+    icon: 'sauce-simon',
     category: 'Arcade',
   },
 ];
@@ -184,6 +194,25 @@ export default function Home() {
                   >
                     {game.icon === 'three-cup-logo' ? (
                       <ThreeCupLogo size="lg" />
+                    ) : game.icon === 'sauce-simon' ? (
+                      <div
+                        style={{
+                          width: 'clamp(80px, 12vw, 120px)',
+                          height: 'clamp(80px, 12vw, 120px)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          position: 'relative',
+                        }}
+                      >
+                        <Image
+                          src="/jarvs-tangy-buffalo.png"
+                          alt="Sauce Simon"
+                          width={120}
+                          height={120}
+                          style={{ objectFit: 'contain' }}
+                        />
+                      </div>
                     ) : (
                       game.icon
                     )}
