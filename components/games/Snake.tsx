@@ -900,6 +900,7 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               zIndex: 15,
               padding: isTouchDevice ? 'clamp(20px, 4vw, 40px)' : 'clamp(12px, 2vw, 20px)',
+              borderRadius: 0,
             }}
           >
             <div
