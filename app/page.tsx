@@ -203,15 +203,99 @@ export default function Home() {
                           alignItems: 'center',
                           justifyContent: 'center',
                           position: 'relative',
+                          flexDirection: 'column',
                         }}
                       >
-                        <Image
-                          src="/jarvs-tangy-buffalo.png"
-                          alt="Sauce Simon"
-                          width={120}
-                          height={120}
-                          style={{ objectFit: 'contain' }}
-                        />
+                        {/* Thinking Bubbles */}
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '-clamp(20px, 3vw, 30px)',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            display: 'flex',
+                            gap: 'clamp(4px, 0.8vw, 8px)',
+                            alignItems: 'flex-end',
+                            zIndex: 2,
+                          }}
+                        >
+                          {/* Small bubble */}
+                          <motion.div
+                            animate={{
+                              scale: [1, 1.2, 1],
+                              opacity: [0.6, 1, 0.6],
+                            }}
+                            transition={{
+                              duration: 1.5,
+                              repeat: Infinity,
+                              delay: 0,
+                            }}
+                            style={{
+                              width: 'clamp(8px, 1.2vw, 12px)',
+                              height: 'clamp(8px, 1.2vw, 12px)',
+                              borderRadius: '50%',
+                              backgroundColor: wingShackTheme.colors.primary,
+                              opacity: 0.8,
+                            }}
+                          />
+                          {/* Medium bubble */}
+                          <motion.div
+                            animate={{
+                              scale: [1, 1.2, 1],
+                              opacity: [0.6, 1, 0.6],
+                            }}
+                            transition={{
+                              duration: 1.5,
+                              repeat: Infinity,
+                              delay: 0.2,
+                            }}
+                            style={{
+                              width: 'clamp(12px, 1.8vw, 18px)',
+                              height: 'clamp(12px, 1.8vw, 18px)',
+                              borderRadius: '50%',
+                              backgroundColor: wingShackTheme.colors.primary,
+                              opacity: 0.8,
+                            }}
+                          />
+                          {/* Large bubble */}
+                          <motion.div
+                            animate={{
+                              scale: [1, 1.2, 1],
+                              opacity: [0.6, 1, 0.6],
+                            }}
+                            transition={{
+                              duration: 1.5,
+                              repeat: Infinity,
+                              delay: 0.4,
+                            }}
+                            style={{
+                              width: 'clamp(16px, 2.4vw, 24px)',
+                              height: 'clamp(16px, 2.4vw, 24px)',
+                              borderRadius: '50%',
+                              backgroundColor: wingShackTheme.colors.primary,
+                              opacity: 0.8,
+                            }}
+                          />
+                        </div>
+                        {/* Mascot */}
+                        <div
+                          style={{
+                            position: 'relative',
+                            width: 'clamp(80px, 12vw, 120px)',
+                            height: 'clamp(80px, 12vw, 120px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Image
+                            src="/mascot - no background_.png"
+                            alt="Wingston thinking"
+                            width={120}
+                            height={120}
+                            style={{ objectFit: 'contain' }}
+                          />
+                        </div>
                       </div>
                     ) : (
                       game.icon
