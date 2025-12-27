@@ -252,7 +252,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
             setShowLevelMessage(true);
           } else if (currentLevel === 1) {
             // Level 2 Complete
-            setLevelMessage('Level 2 Complete\nThat speed catches most people out.');
+            setLevelMessage('Level 2 Complete\nThat speed catches most people out. Final round next.');
             setShowLevelMessage(true);
           } else {
             // Level 3 Complete - go directly to Game Complete
@@ -289,8 +289,9 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
   }, [currentLevel, score, spawnWing]);
 
   // Start the game
-  const startGame = useCallback(() => {
-    const levelConfig = LEVEL_CONFIG[currentLevel];
+  const startGame = useCallback((levelOverride?: number) => {
+    const levelToUse = levelOverride !== undefined ? levelOverride : currentLevel;
+    const levelConfig = LEVEL_CONFIG[levelToUse];
     setScore(0);
     scoreRef.current = 0; // Reset score ref
     setTimeRemaining(levelConfig.duration);
@@ -318,7 +319,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
     const spawnInterval = () => {
       if (!isGameActiveRef.current || gameEndedRef.current) return;
 
-      const levelConfig = LEVEL_CONFIG[currentLevel];
+      const levelConfig = LEVEL_CONFIG[levelToUse];
       const delay = Math.random() * (levelConfig.spawnMax - levelConfig.spawnMin) + levelConfig.spawnMin;
       wingSpawnRef.current = setTimeout(() => {
         if (isGameActiveRef.current && !gameEndedRef.current) {
@@ -762,7 +763,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                     setWings([]);
                     // Start next level after state updates
                     setTimeout(() => {
-                      startGame();
+                      startGame(nextLevel);
                     }, 50);
                   }}
                   style={{
