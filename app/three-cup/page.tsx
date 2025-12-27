@@ -6,7 +6,6 @@ import GameShell from '@/components/GameShell';
 import ThreeCupGame from '@/components/games/ThreeCupGame';
 import { wingShackTheme } from '@/theme/wingShackTheme';
 import WingShackLogo from '@/components/ui/WingShackLogo';
-import GameCard from '@/components/ui/GameCard';
 
 export default function ThreeCupPage() {
   const [resetKey, setResetKey] = useState(0);
@@ -48,13 +47,11 @@ export default function ThreeCupPage() {
       </Link>
 
       {/* Game Container */}
-      <GameCard
-        elevated
+      <div
         style={{
           width: '100%',
           maxWidth: '1000px',
           margin: '0 auto',
-          padding: 'clamp(8px, 2vw, 16px)',
         }}
       >
         <GameShell
@@ -75,7 +72,7 @@ export default function ThreeCupPage() {
             }}
           />
         </GameShell>
-      </GameCard>
+      </div>
     </div>
   );
 }
