@@ -36,7 +36,19 @@ export async function GET(request: NextRequest) {
     console.log('🔍 Supabase client initialized');
     console.log('🔍 Querying scores table for game_id=snake');
 
-    // Fetch top 10 scores
+    // First, let's check what's actually in the table (without filter)
+    const { data: allData, error: allError } = await supabase
+      .from('scores')
+      .select('*')
+      .limit(100);
+
+    console.log('📋 All scores in table (first 100):', {
+      count: allData?.length || 0,
+      data: allData,
+      error: allError ? JSON.stringify(allError, null, 2) : null
+    });
+
+    // Now fetch with filter
     const { data, error } = await supabase
       .from('scores')
       .select('*')
@@ -45,12 +57,20 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: true })
       .limit(10);
 
-    console.log('📊 Supabase query result:', {
+    console.log('📊 Filtered query result (game_id=snake):', {
       hasData: !!data,
       dataLength: data?.length || 0,
+      data: data,
       hasError: !!error,
       error: error ? JSON.stringify(error, null, 2) : null
     });
+
+    // If no data but we have data in table, check the game_id values
+    if ((!data || data.length === 0) && allData && allData.length > 0) {
+      const gameIds = allData.map((row: any) => row.game_id);
+      console.log('⚠️ No data with game_id=snake, but table has data. Game IDs found:', gameIds);
+      console.log('⚠️ Sample row from table:', allData[0]);
+    }
 
     if (error) {
       console.error('Supabase error:', JSON.stringify(error, null, 2));
