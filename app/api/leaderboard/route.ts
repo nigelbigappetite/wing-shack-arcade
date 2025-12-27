@@ -70,6 +70,18 @@ export async function GET(request: NextRequest) {
       const gameIds = allData.map((row: any) => row.game_id);
       console.log('⚠️ No data with game_id=snake, but table has data. Game IDs found:', gameIds);
       console.log('⚠️ Sample row from table:', allData[0]);
+      
+      // This suggests RLS is silently filtering rows
+      return NextResponse.json({ 
+        data: [],
+        debug: {
+          warning: 'RLS may be filtering results',
+          allDataCount: allData.length,
+          gameIdsFound: gameIds,
+          sampleRow: allData[0],
+          message: 'Query returned empty but table has data. Check RLS policies allow SELECT for anonymous users.'
+        }
+      });
     }
 
     if (error) {
@@ -133,7 +145,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ data: data || [] });
+    // Return data with debug info
+    const response: any = { data: data || [] };
+    
+    // Always include debug info to help diagnose RLS issues
+    response.debug = {
+      queryResult: data?.length || 0,
+      allDataCount: allData?.length || 0,
+      hasError: false
+    };
+    
+    return NextResponse.json(response);
   } catch (error: any) {
     console.error('Leaderboard GET error:', error);
     return NextResponse.json(

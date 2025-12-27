@@ -59,11 +59,29 @@ export default function SnakeLeaderboardPage() {
       console.log('✅ Parsed leaderboard data:', leaderboardData);
       console.log('✅ Leaderboard data length:', leaderboardData.length);
       
+      // Log debug info if available
+      if (data.debug) {
+        console.log('🔍 Debug info from API:', data.debug);
+        if (data.debug.warning) {
+          console.warn('⚠️', data.debug.warning);
+          console.warn('⚠️ All data count:', data.debug.allDataCount);
+          console.warn('⚠️ Game IDs found:', data.debug.gameIdsFound);
+          console.warn('⚠️ Sample row:', data.debug.sampleRow);
+        }
+      }
+      
       if (leaderboardData.length === 0) {
         console.log('ℹ️ Leaderboard is empty - this could mean:');
         console.log('   1. No scores have been submitted yet');
         console.log('   2. RLS policies are blocking access (check Supabase)');
         console.log('   3. The scores table exists but has no data');
+        
+        // If we have debug info showing data exists, it's definitely RLS
+        if (data.debug?.allDataCount > 0 && leaderboardData.length === 0) {
+          console.error('❌ RLS ISSUE DETECTED: Table has data but query returns empty!');
+          console.error('❌ This means RLS is silently filtering out all rows.');
+          console.error('❌ Solution: Create a SELECT policy in Supabase that allows anonymous users to read scores.');
+        }
       }
       
       setLeaderboard(leaderboardData);
