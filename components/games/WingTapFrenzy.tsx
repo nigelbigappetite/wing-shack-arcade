@@ -20,7 +20,7 @@ interface WingTapFrenzyProps {
 
 const LEVEL_CONFIG = [
   { target: 20, duration: 10, spawnMin: 1000, spawnMax: 2000, wingLifetime: 1000 }, // Level 1: 20 wings in 10s, 1-2s spawn, 1s lifetime
-  { target: 40, duration: 10, spawnMin: 500, spawnMax: 1200, wingLifetime: 600 }, // Level 2: 40 wings in 10s, 0.5-1.2s spawn, 0.6s lifetime (faster)
+  { target: 30, duration: 10, spawnMin: 500, spawnMax: 1200, wingLifetime: 600 }, // Level 2: 30 wings in 10s, 0.5-1.2s spawn, 0.6s lifetime (faster)
   { target: 40, duration: 15, spawnMin: 500, spawnMax: 1200, wingLifetime: 600 }, // Level 3: 40 wings in 15s, 0.5-1.2s spawn, 0.6s lifetime, has negative items (broccoli)
 ];
 
@@ -38,6 +38,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
   const [showLevelMessage, setShowLevelMessage] = useState(false);
   const [levelMessage, setLevelMessage] = useState('');
   const [showTryAgain, setShowTryAgain] = useState(false);
+  const [levelCompleted, setLevelCompleted] = useState(false); // Track if level was actually completed
   const [showEndScore, setShowEndScore] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
   const [floatingMinusOnes, setFloatingMinusOnes] = useState<Array<{ id: string; x: number; y: number }>>([]);
@@ -243,6 +244,8 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
       setTimeout(() => {
         if (currentScore >= target) {
           // Level complete
+          setLevelCompleted(true);
+          setShowTryAgain(false);
           if (currentLevel === 0) {
             // Level 1 Complete
             setLevelMessage('Nice start.\nYou\'re quicker than the average player.');
@@ -258,6 +261,8 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
           }
         } else {
           // Failed to meet target
+          setLevelCompleted(false);
+          setShowTryAgain(true);
           if (currentLevel === 0) {
             setLevelMessage('Just short.\nGet the rhythm — try again.');
           } else if (currentLevel === 1) {
@@ -266,7 +271,6 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
             setLevelMessage('So close.\nThe broccoli catches people out.');
           }
           setShowLevelMessage(true);
-          setShowTryAgain(true);
         }
       }, 1000);
       
@@ -384,6 +388,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
     setShowLevelMessage(false);
     setShowTryAgain(false);
     setShowEndScore(false);
+    setLevelCompleted(false);
     setTimeRemaining(LEVEL_CONFIG[0].duration);
     setWings([]);
     pausedTimeRef.current = 0;
@@ -736,7 +741,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
               )}
               
               {/* Next Level Button - show when level complete and not all levels done */}
-              {!showTryAgain && currentLevel < LEVEL_CONFIG.length - 1 && (
+              {levelCompleted && !showTryAgain && currentLevel < LEVEL_CONFIG.length - 1 && (
                 <motion.button
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -744,6 +749,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                   onClick={() => {
                     setShowLevelMessage(false);
                     setShowEndScore(false);
+                    setLevelCompleted(false);
                     // Advance to next level
                     const nextLevel = currentLevel + 1;
                     setCurrentLevel(nextLevel);
@@ -793,6 +799,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                     setShowLevelMessage(false);
                     setShowTryAgain(false);
                     setShowEndScore(false);
+                    setLevelCompleted(false);
                   }}
                   style={{
                     padding: 'clamp(12px, 2vw, 16px) clamp(32px, 5vw, 48px)',
@@ -899,6 +906,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                   resetGame();
                   setShowLevelMessage(false);
                   setShowEndScore(false);
+                  setLevelCompleted(false);
                 }}
                 style={{
                   padding: 'clamp(12px, 2vw, 16px) clamp(32px, 5vw, 48px)',
