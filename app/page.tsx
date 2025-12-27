@@ -47,6 +47,15 @@ const games: Game[] = [
     icon: 'sauce-simon',
     category: 'Arcade',
   },
+  {
+    id: 'snake',
+    title: 'SNAKE',
+    description: 'EAT THE WINGS. DON\'T CRASH.',
+    href: '/snake',
+    color: '#28a745',
+    icon: '🐍',
+    category: 'Arcade',
+  },
 ];
 
 export default function Home() {
