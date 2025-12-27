@@ -782,9 +782,10 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                     fontWeight: wingShackTheme.typography.fontWeight.bold,
                     letterSpacing: '2px',
                     cursor: 'pointer',
-                    boxShadow: `0 6px 20px ${wingShackTheme.colors.secondary}50`,
+                    boxShadow: `0 6px 20px ${wingShackTheme.colors.secondary}80`,
                     transition: 'all 0.3s ease',
                     marginTop: 'clamp(16px, 3vw, 24px)',
+                    opacity: 1,
                   }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -818,9 +819,10 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                     fontWeight: wingShackTheme.typography.fontWeight.bold,
                     letterSpacing: '2px',
                     cursor: 'pointer',
-                    boxShadow: `0 6px 20px ${wingShackTheme.colors.primary}50`,
+                    boxShadow: `0 6px 20px ${wingShackTheme.colors.primary}80`,
                     transition: 'all 0.3s ease',
                     marginTop: 'clamp(16px, 3vw, 24px)',
+                    opacity: 1,
                   }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -925,9 +927,10 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                   fontWeight: wingShackTheme.typography.fontWeight.bold,
                   letterSpacing: '2px',
                   cursor: 'pointer',
-                  boxShadow: `0 6px 20px ${wingShackTheme.colors.secondary}50`,
+                  boxShadow: `0 6px 20px ${wingShackTheme.colors.secondary}80`,
                   transition: 'all 0.3s ease',
                   marginTop: 'clamp(16px, 3vw, 24px)',
+                  opacity: 1,
                 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
