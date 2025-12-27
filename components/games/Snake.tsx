@@ -531,7 +531,7 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
           justifyContent: 'flex-start',
           padding: isTouchDevice ? 'clamp(12px, 2vw, 20px)' : 'clamp(8px, 1vw, 12px)',
           backgroundColor: wingShackTheme.colors.backgroundCard,
-          borderRadius: wingShackTheme.borderRadius.lg,
+          borderRadius: 0,
           gap: isTouchDevice ? 'clamp(8px, 1.5vw, 12px)' : 'clamp(4px, 0.8vw, 8px)',
           overflow: 'hidden',
           boxSizing: 'border-box',
