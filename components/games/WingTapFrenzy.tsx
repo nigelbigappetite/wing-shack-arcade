@@ -19,7 +19,7 @@ interface WingTapFrenzyProps {
 }
 
 const LEVEL_CONFIG = [
-  { target: 20, duration: 15, spawnMin: 1000, spawnMax: 2000, wingLifetime: 1000 }, // Level 1: 20 wings in 15s, 1-2s spawn, 1s lifetime
+  { target: 20, duration: 10, spawnMin: 1000, spawnMax: 2000, wingLifetime: 1000 }, // Level 1: 20 wings in 10s, 1-2s spawn, 1s lifetime
   { target: 40, duration: 20, spawnMin: 500, spawnMax: 1200, wingLifetime: 600 }, // Level 2: 40 wings in 20s, 0.5-1.2s spawn, 0.6s lifetime
   { target: 40, duration: 20, spawnMin: 500, spawnMax: 1200, wingLifetime: 600 }, // Level 3: 40 wings in 20s, 0.5-1.2s spawn, 0.6s lifetime, has negative items
 ];
@@ -619,7 +619,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                   fontFamily: wingShackTheme.typography.fontFamily.display,
                   fontSize: 'clamp(32px, 5vw, 48px)',
                   fontWeight: wingShackTheme.typography.fontWeight.bold,
-                  color: levelMessage.includes('LOSE') ? wingShackTheme.colors.error : '#00ff00',
+                  color: levelMessage.includes('LOSE') || levelMessage.includes('TRY AGAIN') ? wingShackTheme.colors.error : '#00ff00',
                   textAlign: 'center',
                   whiteSpace: 'pre-line',
                   lineHeight: 1.4,
@@ -628,6 +628,52 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                 {levelMessage}
               </motion.div>
               
+              {/* Next Level Button - show when level complete and not all levels done */}
+              {levelMessage.includes('LEVEL') && levelMessage.includes('COMPLETE') && currentLevel < LEVEL_CONFIG.length - 1 && (
+                <motion.button
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  onClick={() => {
+                    setShowLevelMessage(false);
+                    // Advance to next level
+                    const nextLevel = currentLevel + 1;
+                    setCurrentLevel(nextLevel);
+                    setScore(0);
+                    scoreRef.current = 0;
+                    negativeSpawnCounterRef.current = 0;
+                    setTimeRemaining(LEVEL_CONFIG[nextLevel].duration);
+                    setGameEnded(false);
+                    gameEndedRef.current = false;
+                    setWings([]);
+                    // Start next level after state updates
+                    setTimeout(() => {
+                      // Use startGame to properly initialize the next level
+                      // It will use the updated currentLevel from state
+                      startGame();
+                    }, 50);
+                  }}
+                  style={{
+                    padding: 'clamp(12px, 2vw, 16px) clamp(32px, 5vw, 48px)',
+                    backgroundColor: wingShackTheme.colors.secondary,
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: wingShackTheme.borderRadius.lg,
+                    fontFamily: wingShackTheme.typography.fontFamily.display,
+                    fontSize: 'clamp(18px, 3vw, 24px)',
+                    fontWeight: wingShackTheme.typography.fontWeight.bold,
+                    letterSpacing: '2px',
+                    cursor: 'pointer',
+                    boxShadow: `0 6px 20px ${wingShackTheme.colors.secondary}50`,
+                    transition: 'all 0.3s ease',
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  NEXT LEVEL →
+                </motion.button>
+              )}
+
               {/* Try Again Button - show on failure */}
               {showTryAgain && (
                 <motion.button
