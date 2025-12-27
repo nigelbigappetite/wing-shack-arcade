@@ -78,14 +78,11 @@ export default function SpinTheWingPage() {
       </GameCard>
 
       {/* Game Container */}
-      <GameCard
-        elevated
-        glow
+      <div
         style={{
           width: '100%',
           maxWidth: '1000px',
           margin: '0 auto',
-          padding: wingShackTheme.spacing.xl,
         }}
       >
         <GameShell
@@ -107,7 +104,7 @@ export default function SpinTheWingPage() {
             }}
           />
         </GameShell>
-      </GameCard>
+      </div>
     </div>
   );
 }

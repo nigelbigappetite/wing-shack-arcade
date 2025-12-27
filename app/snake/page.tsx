@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GameShell from '@/components/GameShell';
 import Snake from '@/components/games/Snake';
 import { wingShackTheme } from '@/theme/wingShackTheme';
-import GameCard from '@/components/ui/GameCard';
 import WingShackLogo from '@/components/ui/WingShackLogo';
 
 export default function SnakePage() {
@@ -111,15 +110,11 @@ export default function SnakePage() {
       </Link>
 
       {/* Game Container */}
-      <GameCard
-        elevated
+      <div
         style={{
           width: '100%',
           maxWidth: '1000px',
           margin: '0 auto',
-          padding: 'clamp(8px, 2vw, 16px)',
-          overflow: 'hidden',
-          borderRadius: 0,
         }}
       >
         <GameShell
@@ -145,7 +140,7 @@ export default function SnakePage() {
             onGameOver={handleGameOver}
           />
         </GameShell>
-      </GameCard>
+      </div>
 
 
       {/* Game Over Score Submission Overlay */}

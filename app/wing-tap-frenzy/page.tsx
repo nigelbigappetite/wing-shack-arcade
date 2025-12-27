@@ -6,7 +6,6 @@ import GameShell from '@/components/GameShell';
 import WingTapFrenzy from '@/components/games/WingTapFrenzy';
 import { wingShackTheme } from '@/theme/wingShackTheme';
 import WingShackLogo from '@/components/ui/WingShackLogo';
-import GameCard from '@/components/ui/GameCard';
 
 export default function WingTapFrenzyPage() {
   const [resetKey, setResetKey] = useState(0);
@@ -48,14 +47,11 @@ export default function WingTapFrenzyPage() {
       </Link>
 
       {/* Game Container */}
-      <GameCard
-        elevated
+      <div
         style={{
           width: '100%',
           maxWidth: '1000px',
           margin: '0 auto',
-          padding: 'clamp(8px, 2vw, 16px)',
-          overflow: 'hidden',
         }}
       >
         <GameShell
@@ -76,7 +72,7 @@ export default function WingTapFrenzyPage() {
             }}
           />
         </GameShell>
-      </GameCard>
+      </div>
     </div>
   );
 }

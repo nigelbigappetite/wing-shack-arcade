@@ -6,7 +6,6 @@ import GameShell from '@/components/GameShell';
 import SauceSimon from '@/components/games/SauceSimon';
 import { wingShackTheme } from '@/theme/wingShackTheme';
 import WingShackLogo from '@/components/ui/WingShackLogo';
-import GameCard from '@/components/ui/GameCard';
 
 export default function SauceSimonPage() {
   const [resetKey, setResetKey] = useState(0);
@@ -48,14 +47,11 @@ export default function SauceSimonPage() {
       </Link>
 
       {/* Game Container */}
-      <GameCard
-        elevated
+      <div
         style={{
           width: '100%',
           maxWidth: '1000px',
           margin: '0 auto',
-          padding: 'clamp(8px, 2vw, 16px)',
-          overflow: 'hidden',
         }}
       >
         <GameShell
@@ -76,7 +72,7 @@ export default function SauceSimonPage() {
             }}
           />
         </GameShell>
-      </GameCard>
+      </div>
     </div>
   );
 }
