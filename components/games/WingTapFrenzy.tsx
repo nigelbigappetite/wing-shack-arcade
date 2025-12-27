@@ -741,8 +741,8 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                 </>
               )}
               
-              {/* Next Level Button - show when level complete and not all levels done */}
-              {levelCompleted && !showTryAgain && currentLevel < LEVEL_CONFIG.length - 1 && (
+              {/* Next Level Button - ONLY show when level was actually completed (score >= target) and not all levels done */}
+              {!showTryAgain && levelCompleted && currentLevel < LEVEL_CONFIG.length - 1 && (
                 <motion.button
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -788,8 +788,8 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                 </motion.button>
               )}
 
-              {/* Try Again Button - show on failure */}
-              {showTryAgain && (
+              {/* Try Again Button - show ONLY on failure (when showTryAgain is true) */}
+              {showTryAgain && !levelCompleted && (
                 <motion.button
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
