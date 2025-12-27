@@ -238,31 +238,35 @@ const SauceSimon: React.FC<SauceSimonProps> = ({ onScore }) => {
           <div
             style={{
               position: 'absolute',
-              top: 'clamp(12px, 2vw, 20px)',
-              left: 'clamp(12px, 2vw, 20px)',
-              right: 'clamp(12px, 2vw, 20px)',
+              top: 'clamp(8px, 1.5vw, 12px)',
+              left: 'clamp(8px, 1.5vw, 12px)',
+              right: 'clamp(8px, 1.5vw, 12px)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              gap: 'clamp(8px, 1.5vw, 12px)',
               zIndex: 10,
               pointerEvents: 'none',
+              flexWrap: 'wrap',
             }}
           >
             {/* Round Number */}
             <div
               style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                padding: 'clamp(8px, 1.5vw, 12px) clamp(16px, 2.5vw, 24px)',
+                padding: 'clamp(6px, 1.2vw, 10px) clamp(12px, 2vw, 18px)',
                 borderRadius: wingShackTheme.borderRadius.lg,
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                flexShrink: 0,
               }}
             >
               <div
                 style={{
                   fontFamily: wingShackTheme.typography.fontFamily.display,
-                  fontSize: 'clamp(18px, 3vw, 24px)',
+                  fontSize: 'clamp(14px, 2.5vw, 20px)',
                   fontWeight: wingShackTheme.typography.fontWeight.bold,
                   color: wingShackTheme.colors.primary,
+                  whiteSpace: 'nowrap',
                 }}
               >
                 Round {currentRound}
@@ -273,17 +277,19 @@ const SauceSimon: React.FC<SauceSimonProps> = ({ onScore }) => {
             <div
               style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                padding: 'clamp(8px, 1.5vw, 12px) clamp(16px, 2.5vw, 24px)',
+                padding: 'clamp(6px, 1.2vw, 10px) clamp(12px, 2vw, 18px)',
                 borderRadius: wingShackTheme.borderRadius.lg,
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                flexShrink: 0,
               }}
             >
               <div
                 style={{
                   fontFamily: wingShackTheme.typography.fontFamily.display,
-                  fontSize: 'clamp(18px, 3vw, 24px)',
+                  fontSize: 'clamp(14px, 2.5vw, 20px)',
                   fontWeight: wingShackTheme.typography.fontWeight.bold,
                   color: wingShackTheme.colors.secondary,
+                  whiteSpace: 'nowrap',
                 }}
               >
                 Score: {score}

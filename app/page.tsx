@@ -204,85 +204,33 @@ export default function Home() {
                           justifyContent: 'center',
                           position: 'relative',
                           flexDirection: 'column',
+                          gap: 'clamp(8px, 1.5vw, 12px)',
                         }}
                       >
-                        {/* Thinking Bubbles */}
-                        <div
+                        {/* Brain Emoji */}
+                        <motion.div
+                          animate={{
+                            scale: [1, 1.1, 1],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                          }}
                           style={{
-                            position: 'absolute',
-                            top: '-clamp(20px, 3vw, 30px)',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            display: 'flex',
-                            gap: 'clamp(4px, 0.8vw, 8px)',
-                            alignItems: 'flex-end',
-                            zIndex: 2,
+                            fontSize: 'clamp(40px, 6vw, 60px)',
+                            lineHeight: 1,
+                            filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2))',
                           }}
                         >
-                          {/* Small bubble */}
-                          <motion.div
-                            animate={{
-                              scale: [1, 1.2, 1],
-                              opacity: [0.6, 1, 0.6],
-                            }}
-                            transition={{
-                              duration: 1.5,
-                              repeat: Infinity,
-                              delay: 0,
-                            }}
-                            style={{
-                              width: 'clamp(8px, 1.2vw, 12px)',
-                              height: 'clamp(8px, 1.2vw, 12px)',
-                              borderRadius: '50%',
-                              backgroundColor: wingShackTheme.colors.primary,
-                              opacity: 0.8,
-                            }}
-                          />
-                          {/* Medium bubble */}
-                          <motion.div
-                            animate={{
-                              scale: [1, 1.2, 1],
-                              opacity: [0.6, 1, 0.6],
-                            }}
-                            transition={{
-                              duration: 1.5,
-                              repeat: Infinity,
-                              delay: 0.2,
-                            }}
-                            style={{
-                              width: 'clamp(12px, 1.8vw, 18px)',
-                              height: 'clamp(12px, 1.8vw, 18px)',
-                              borderRadius: '50%',
-                              backgroundColor: wingShackTheme.colors.primary,
-                              opacity: 0.8,
-                            }}
-                          />
-                          {/* Large bubble */}
-                          <motion.div
-                            animate={{
-                              scale: [1, 1.2, 1],
-                              opacity: [0.6, 1, 0.6],
-                            }}
-                            transition={{
-                              duration: 1.5,
-                              repeat: Infinity,
-                              delay: 0.4,
-                            }}
-                            style={{
-                              width: 'clamp(16px, 2.4vw, 24px)',
-                              height: 'clamp(16px, 2.4vw, 24px)',
-                              borderRadius: '50%',
-                              backgroundColor: wingShackTheme.colors.primary,
-                              opacity: 0.8,
-                            }}
-                          />
-                        </div>
+                          🧠
+                        </motion.div>
                         {/* Mascot */}
                         <div
                           style={{
                             position: 'relative',
-                            width: 'clamp(80px, 12vw, 120px)',
-                            height: 'clamp(80px, 12vw, 120px)',
+                            width: 'clamp(60px, 9vw, 90px)',
+                            height: 'clamp(60px, 9vw, 90px)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -291,8 +239,8 @@ export default function Home() {
                           <Image
                             src="/mascot - no background_.png"
                             alt="Wingston thinking"
-                            width={120}
-                            height={120}
+                            width={90}
+                            height={90}
                             style={{ objectFit: 'contain' }}
                           />
                         </div>
