@@ -495,7 +495,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
           position: 'relative',
           overflow: 'hidden',
           backgroundColor: '#ffffff',
-          borderRadius: wingShackTheme.borderRadius.lg,
+          borderRadius: 0,
           touchAction: 'manipulation', // Optimize for touch
           isolation: 'isolate', // Create new stacking context to prevent gaps
         }}
@@ -1030,6 +1030,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               zIndex: 15,
               padding: 'clamp(20px, 4vw, 40px)',
+              borderRadius: 0,
             }}
           >
             <div
