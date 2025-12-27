@@ -220,25 +220,33 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
               >
                 <button
                   style={{
-                    padding: 'clamp(6px, 1.5vw, 8px) clamp(8px, 2vw, 10px)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    padding: 'clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 16px)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
                     color: wingShackTheme.colors.text,
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '6px',
+                    border: 'none',
+                    borderRadius: wingShackTheme.borderRadius.md,
                     cursor: 'pointer',
-                    fontSize: 'clamp(10px, 2vw, 12px)',
-                    fontWeight: 500,
-                    transition: 'all 0.2s',
+                    fontSize: 'clamp(11px, 2vw, 13px)',
+                    fontWeight: wingShackTheme.typography.fontWeight.semibold,
+                    fontFamily: wingShackTheme.typography.fontFamily.body,
+                    transition: 'all 0.2s ease',
                     whiteSpace: 'nowrap',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px',
+                    gap: '6px',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = wingShackTheme.colors.primary + '40';
+                    e.currentTarget.style.backgroundColor = wingShackTheme.colors.primary;
+                    e.currentTarget.style.color = '#ffffff';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+                    e.currentTarget.style.color = wingShackTheme.colors.text;
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
                   }}
                 >
                   🏠 Home
@@ -249,29 +257,37 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
               <button
                 onClick={() => setShowHowToPlay(!showHowToPlay)}
                 style={{
-                  padding: 'clamp(6px, 1.5vw, 8px) clamp(8px, 2vw, 10px)',
-                  backgroundColor: showHowToPlay ? wingShackTheme.colors.secondary : 'rgba(255, 255, 255, 0.1)',
+                  padding: 'clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 16px)',
+                  backgroundColor: showHowToPlay ? wingShackTheme.colors.secondary : 'rgba(255, 255, 255, 0.95)',
                   color: showHowToPlay ? '#000' : wingShackTheme.colors.text,
-                  border: `1px solid ${showHowToPlay ? wingShackTheme.colors.secondary : 'rgba(255, 255, 255, 0.2)'}`,
-                  borderRadius: '6px',
+                  border: 'none',
+                  borderRadius: wingShackTheme.borderRadius.md,
                   cursor: 'pointer',
-                  fontSize: 'clamp(10px, 2vw, 12px)',
-                  fontWeight: 500,
-                  transition: 'all 0.2s',
+                  fontSize: 'clamp(11px, 2vw, 13px)',
+                  fontWeight: wingShackTheme.typography.fontWeight.semibold,
+                  fontFamily: wingShackTheme.typography.fontFamily.body,
+                  transition: 'all 0.2s ease',
                   whiteSpace: 'nowrap',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
                 }}
                 onMouseEnter={(e) => {
                   if (!showHowToPlay) {
-                    e.currentTarget.style.backgroundColor = wingShackTheme.colors.secondary + '40';
+                    e.currentTarget.style.backgroundColor = wingShackTheme.colors.secondary;
+                    e.currentTarget.style.color = '#000';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!showHowToPlay) {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+                    e.currentTarget.style.color = wingShackTheme.colors.text;
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
                   }
                 }}
               >
-                {showHowToPlay ? '✕' : 'ℹ️ How to Play'}
+                {showHowToPlay ? '✕ Close' : 'ℹ️ How to Play'}
               </button>
 
               {/* Leaderboard Button - Only show for Snake game */}
@@ -284,22 +300,30 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
                 >
                   <button
                     style={{
-                      padding: 'clamp(6px, 1.5vw, 8px) clamp(8px, 2vw, 10px)',
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      padding: 'clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 16px)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
                       color: wingShackTheme.colors.text,
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '6px',
+                      border: 'none',
+                      borderRadius: wingShackTheme.borderRadius.md,
                       cursor: 'pointer',
-                      fontSize: 'clamp(10px, 2vw, 12px)',
-                      fontWeight: 500,
-                      transition: 'all 0.2s',
+                      fontSize: 'clamp(11px, 2vw, 13px)',
+                      fontWeight: wingShackTheme.typography.fontWeight.semibold,
+                      fontFamily: wingShackTheme.typography.fontFamily.body,
+                      transition: 'all 0.2s ease',
                       whiteSpace: 'nowrap',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = wingShackTheme.colors.secondary + '40';
+                      e.currentTarget.style.backgroundColor = wingShackTheme.colors.secondary;
+                      e.currentTarget.style.color = '#000';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+                      e.currentTarget.style.color = wingShackTheme.colors.text;
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
                     }}
                   >
                     🏆 Leaderboard
@@ -311,23 +335,26 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
               <button
                 onClick={toggleSound}
                 style={{
-                  padding: 'clamp(6px, 1.5vw, 8px)',
-                  backgroundColor: soundEnabled ? 'rgba(78, 205, 196, 0.2)' : 'rgba(255, 255, 255, 0.1)',
-                  color: '#fff',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '6px',
+                  padding: 'clamp(8px, 1.5vw, 10px)',
+                  backgroundColor: soundEnabled ? 'rgba(78, 205, 196, 0.15)' : 'rgba(255, 255, 255, 0.95)',
+                  color: soundEnabled ? '#4ECDC4' : wingShackTheme.colors.text,
+                  border: 'none',
+                  borderRadius: wingShackTheme.borderRadius.md,
                   cursor: 'pointer',
-                  fontSize: 'clamp(14px, 2.5vw, 16px)',
-                  minWidth: 'clamp(32px, 6vw, 36px)',
-                  transition: 'all 0.2s',
+                  fontSize: 'clamp(16px, 2.5vw, 18px)',
+                  minWidth: 'clamp(36px, 6vw, 40px)',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(78, 205, 196, 0.25)';
+                  e.currentTarget.style.backgroundColor = soundEnabled ? 'rgba(78, 205, 196, 0.25)' : wingShackTheme.colors.secondary;
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = soundEnabled
-                    ? 'rgba(78, 205, 196, 0.2)'
-                    : 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.backgroundColor = soundEnabled ? 'rgba(78, 205, 196, 0.15)' : 'rgba(255, 255, 255, 0.95)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
                 }}
                 aria-label={soundEnabled ? 'Mute sound' : 'Enable sound'}
               >
@@ -339,25 +366,30 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
                 <button
                   onClick={handlePause}
                   style={{
-                    padding: 'clamp(6px, 1.5vw, 8px)',
-                    backgroundColor: isPaused ? 'rgba(255, 107, 107, 0.2)' : 'rgba(78, 205, 196, 0.2)',
-                    color: '#fff',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '6px',
+                    padding: 'clamp(8px, 1.5vw, 10px)',
+                    backgroundColor: isPaused ? 'rgba(255, 107, 107, 0.15)' : 'rgba(78, 205, 196, 0.15)',
+                    color: isPaused ? '#FF6B6B' : '#4ECDC4',
+                    border: 'none',
+                    borderRadius: wingShackTheme.borderRadius.md,
                     cursor: 'pointer',
-                    fontSize: 'clamp(14px, 2.5vw, 16px)',
-                    minWidth: 'clamp(32px, 6vw, 36px)',
-                    transition: 'all 0.2s',
+                    fontSize: 'clamp(16px, 2.5vw, 18px)',
+                    minWidth: 'clamp(36px, 6vw, 40px)',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = isPaused
-                      ? 'rgba(255, 107, 107, 0.3)'
-                      : 'rgba(78, 205, 196, 0.3)';
+                      ? 'rgba(255, 107, 107, 0.25)'
+                      : 'rgba(78, 205, 196, 0.25)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = isPaused
-                      ? 'rgba(255, 107, 107, 0.2)'
-                      : 'rgba(78, 205, 196, 0.2)';
+                      ? 'rgba(255, 107, 107, 0.15)'
+                      : 'rgba(78, 205, 196, 0.15)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
                   }}
                   aria-label={isPaused ? 'Resume' : 'Pause'}
                 >
@@ -370,26 +402,26 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
                 <button
                   onClick={handleStart}
                   style={{
-                    padding: 'clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px)',
-                  backgroundColor: wingShackTheme.colors.primary,
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: wingShackTheme.borderRadius.md,
+                    padding: 'clamp(8px, 1.5vw, 10px) clamp(16px, 3vw, 20px)',
+                    backgroundColor: wingShackTheme.colors.primary,
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: wingShackTheme.borderRadius.md,
                     cursor: 'pointer',
                     fontSize: 'clamp(12px, 2.5vw, 14px)',
-                    fontWeight: 600,
-                    transition: 'all 0.2s',
+                    fontWeight: wingShackTheme.typography.fontWeight.bold,
+                    fontFamily: wingShackTheme.typography.fontFamily.body,
+                    transition: 'all 0.2s ease',
                     whiteSpace: 'nowrap',
+                    boxShadow: '0 2px 8px rgba(159, 8, 8, 0.3)',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = wingShackTheme.colors.primaryLight;
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.2)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(159, 8, 8, 0.4)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = wingShackTheme.colors.primary;
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(159, 8, 8, 0.3)';
                   }}
                 >
                   Start
@@ -398,24 +430,26 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
                 <button
                   onClick={handleReset}
                   style={{
-                    padding: 'clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px)',
-                    backgroundColor: 'rgba(255, 107, 107, 0.8)',
-                    color: '#fff',
+                    padding: 'clamp(8px, 1.5vw, 10px) clamp(16px, 3vw, 20px)',
+                    backgroundColor: '#FF6B6B',
+                    color: '#ffffff',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: wingShackTheme.borderRadius.md,
                     cursor: 'pointer',
                     fontSize: 'clamp(12px, 2.5vw, 14px)',
-                    fontWeight: 600,
-                    transition: 'all 0.2s',
+                    fontWeight: wingShackTheme.typography.fontWeight.bold,
+                    fontFamily: wingShackTheme.typography.fontFamily.body,
+                    transition: 'all 0.2s ease',
                     whiteSpace: 'nowrap',
+                    boxShadow: '0 2px 8px rgba(255, 107, 107, 0.3)',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 107, 107, 1)';
-                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 107, 0.4)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 107, 107, 0.8)';
-                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 107, 107, 0.3)';
                   }}
                 >
                   Restart

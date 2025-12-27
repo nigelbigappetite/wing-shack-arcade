@@ -176,9 +176,42 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Supabase insert error:', error);
+      console.error('Supabase insert error:', JSON.stringify(error, null, 2));
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      console.error('Error details:', error.details);
+      console.error('Error hint:', error.hint);
+      
+      // Check for RLS/permission errors
+      if (
+        error.code === '42501' || 
+        error.message?.toLowerCase().includes('permission denied') ||
+        error.message?.toLowerCase().includes('row-level security') ||
+        error.message?.toLowerCase().includes('rls') ||
+        error.message?.toLowerCase().includes('policy') ||
+        error.hint?.toLowerCase().includes('policy')
+      ) {
+        return NextResponse.json(
+          { 
+            error: 'RLS Permission Denied', 
+            details: 'Row Level Security (RLS) is blocking score submission.',
+            solution: 'In Supabase Dashboard: 1) Go to Authentication > Policies, 2) Create an INSERT policy for the "scores" table: "Enable insert for all users" (INSERT policy with "true" as the expression)',
+            errorCode: error.code,
+            errorMessage: error.message,
+            errorHint: error.hint
+          },
+          { status: 403 }
+        );
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to submit score', details: error.message },
+        { 
+          error: 'Failed to submit score', 
+          details: error.message || 'Unknown error',
+          code: error.code || 'UNKNOWN',
+          hint: error.hint,
+          fullError: process.env.NODE_ENV === 'development' ? JSON.stringify(error, null, 2) : undefined
+        },
         { status: 500 }
       );
     }

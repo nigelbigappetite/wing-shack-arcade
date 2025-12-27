@@ -25,22 +25,56 @@ export default function SnakeLeaderboardPage() {
     setLeaderboardLoading(true);
     setLeaderboardError(null);
     try {
+      console.log('🔍 Fetching leaderboard from /api/leaderboard?game_id=snake');
       const response = await fetch('/api/leaderboard?game_id=snake');
-      const data = await response.json();
       
-      console.log('Leaderboard API response:', data);
+      console.log('📡 Response status:', response.status, response.statusText);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      const data = await response.json();
+      console.log('📦 Full API response:', JSON.stringify(data, null, 2));
+      console.log('📦 Response data object:', data);
       
       if (!response.ok) {
-        throw new Error(data.error || data.details || 'Failed to fetch leaderboard');
+        console.error('❌ API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: data.error,
+          details: data.details,
+          solution: data.solution,
+          code: data.errorCode,
+          message: data.errorMessage,
+          hint: data.errorHint,
+          fullError: data.fullError
+        });
+        
+        const errorMsg = data.error || data.details || 'Failed to fetch leaderboard';
+        const solution = data.solution ? `\n\nSolution: ${data.solution}` : '';
+        const fullError = data.fullError ? `\n\nFull Error: ${data.fullError}` : '';
+        throw new Error(`${errorMsg}${solution}${fullError}`);
       }
       
       // Handle both { data: [...] } and direct array responses
       const leaderboardData = Array.isArray(data) ? data : (data.data || []);
-      console.log('Parsed leaderboard data:', leaderboardData);
+      console.log('✅ Parsed leaderboard data:', leaderboardData);
+      console.log('✅ Leaderboard data length:', leaderboardData.length);
+      
+      if (leaderboardData.length === 0) {
+        console.log('ℹ️ Leaderboard is empty - this could mean:');
+        console.log('   1. No scores have been submitted yet');
+        console.log('   2. RLS policies are blocking access (check Supabase)');
+        console.log('   3. The scores table exists but has no data');
+      }
       
       setLeaderboard(leaderboardData);
     } catch (error: any) {
-      console.error('Leaderboard fetch error:', error);
+      console.error('❌ Leaderboard fetch error:', error);
+      console.error('❌ Error stack:', error.stack);
+      console.error('❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        cause: error.cause
+      });
       setLeaderboardError(error.message || 'Failed to load leaderboard');
     } finally {
       setLeaderboardLoading(false);
@@ -79,6 +113,7 @@ export default function SnakeLeaderboardPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          width: '100%',
           marginTop: 'clamp(8px, 2vw, 16px)',
           textDecoration: 'none',
           cursor: 'pointer',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import GameShell from '@/components/GameShell';
@@ -9,6 +9,14 @@ import { wingShackTheme } from '@/theme/wingShackTheme';
 import GameCard from '@/components/ui/GameCard';
 import WingShackLogo from '@/components/ui/WingShackLogo';
 
+interface LeaderboardEntry {
+  id?: string;
+  game_id: string;
+  player_name: string;
+  score: number;
+  created_at?: string;
+}
+
 export default function SnakePage() {
   const [resetKey, setResetKey] = useState(0);
   const [gameOverScore, setGameOverScore] = useState<number | null>(null);
@@ -16,6 +24,70 @@ export default function SnakePage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
+
+  // Fetch leaderboard
+  const fetchLeaderboard = useCallback(async () => {
+    setLeaderboardLoading(true);
+    setLeaderboardError(null);
+    try {
+      console.log('🔍 Fetching leaderboard from /api/leaderboard?game_id=snake');
+      const response = await fetch('/api/leaderboard?game_id=snake');
+      
+      console.log('📡 Response status:', response.status, response.statusText);
+      const data = await response.json();
+      console.log('📦 Full API response:', JSON.stringify(data, null, 2));
+      
+      if (!response.ok) {
+        console.error('❌ API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: data.error,
+          details: data.details,
+          solution: data.solution,
+          code: data.errorCode,
+          message: data.errorMessage,
+          hint: data.errorHint,
+          fullError: data.fullError
+        });
+        
+        const errorMsg = data.error || data.details || 'Failed to fetch leaderboard';
+        const solution = data.solution ? `\n\nSolution: ${data.solution}` : '';
+        throw new Error(`${errorMsg}${solution}`);
+      }
+      
+      // Handle both { data: [...] } and direct array responses
+      const leaderboardData = Array.isArray(data) ? data : (data.data || []);
+      console.log('✅ Parsed leaderboard data:', leaderboardData);
+      console.log('✅ Leaderboard data length:', leaderboardData.length);
+      
+      if (leaderboardData.length === 0) {
+        console.log('ℹ️ Leaderboard is empty - this could mean:');
+        console.log('   1. No scores have been submitted yet');
+        console.log('   2. RLS policies are blocking access (check Supabase)');
+        console.log('   3. The scores table exists but has no data');
+      }
+      
+      setLeaderboard(leaderboardData);
+    } catch (error: any) {
+      console.error('❌ Leaderboard fetch error:', error);
+      console.error('❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      setLeaderboardError(error.message || 'Failed to load leaderboard');
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  }, []);
+
+  // Fetch leaderboard on mount and after score submission
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [fetchLeaderboard]);
 
   // Handle game over
   const handleGameOver = useCallback((finalScore: number) => {
@@ -62,6 +134,8 @@ export default function SnakePage() {
       }
 
       setSubmitSuccess(true);
+      // Refresh leaderboard after successful submission
+      await fetchLeaderboard();
       // Clear game over state after a delay
       setTimeout(() => {
         setGameOverScore(null);
@@ -72,7 +146,7 @@ export default function SnakePage() {
     } finally {
       setSubmitting(false);
     }
-  }, [gameOverScore, playerName]);
+  }, [gameOverScore, playerName, fetchLeaderboard]);
 
   return (
     <div
@@ -101,6 +175,7 @@ export default function SnakePage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          width: '100%',
           marginTop: 'clamp(8px, 2vw, 16px)',
           textDecoration: 'none',
           cursor: 'pointer',
@@ -109,41 +184,226 @@ export default function SnakePage() {
         <WingShackLogo size="sm" showText={false} />
       </Link>
 
-      {/* Game Container */}
-      <GameCard
-        elevated
+      {/* Main Content Container */}
+      <div
         style={{
           width: '100%',
-          maxWidth: '1000px',
+          maxWidth: '1200px',
           margin: '0 auto',
-          padding: 'clamp(8px, 2vw, 16px)',
-          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'row',
+          gap: 'clamp(12px, 2vw, 20px)',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
         }}
       >
-        <GameShell
-          title="Snake"
-          howToPlay="Eat the wings 🍗 to grow longer. Use arrow keys or WASD on desktop, or swipe on mobile. Don't hit the walls or yourself! Speed increases every 5 wings."
-          onStart={() => {
-            setGameOverScore(null);
-            setSubmitSuccess(false);
+        {/* Game Container */}
+        <GameCard
+          elevated
+          style={{
+            flex: '1 1 600px',
+            padding: 'clamp(8px, 2vw, 16px)',
+            overflow: 'hidden',
+            minWidth: 0,
           }}
-          onReset={() => {
-            setGameOverScore(null);
-            setSubmitSuccess(false);
-            setResetKey((prev) => prev + 1);
-          }}
-          onPause={() => console.log('Game paused')}
-          onResume={() => console.log('Game resumed')}
         >
-          <Snake
-            key={resetKey}
-            onScore={(score) => {
-              console.log('Score:', score);
+          <GameShell
+            title="Snake"
+            howToPlay="Eat the wings 🍗 to grow longer. Use arrow keys or WASD on desktop, or swipe on mobile. Don't hit the walls or yourself! Speed increases every 5 wings."
+            onStart={() => {
+              setGameOverScore(null);
+              setSubmitSuccess(false);
             }}
-            onGameOver={handleGameOver}
-          />
-        </GameShell>
-      </GameCard>
+            onReset={() => {
+              setGameOverScore(null);
+              setSubmitSuccess(false);
+              setResetKey((prev) => prev + 1);
+            }}
+            onPause={() => console.log('Game paused')}
+            onResume={() => console.log('Game resumed')}
+          >
+            <Snake
+              key={resetKey}
+              onScore={(score) => {
+                console.log('Score:', score);
+              }}
+              onGameOver={handleGameOver}
+            />
+          </GameShell>
+        </GameCard>
+
+        {/* Leaderboard Sidebar */}
+        <GameCard
+          elevated
+          style={{
+            width: 'clamp(200px, 25vw, 300px)',
+            flex: '0 0 auto',
+            padding: 'clamp(16px, 2vw, 20px)',
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: '80vh',
+            overflow: 'hidden',
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: wingShackTheme.typography.fontFamily.display,
+              fontSize: 'clamp(18px, 2.5vw, 24px)',
+              fontWeight: wingShackTheme.typography.fontWeight.bold,
+              color: wingShackTheme.colors.primary,
+              margin: '0 0 clamp(12px, 2vw, 16px) 0',
+              textAlign: 'center',
+            }}
+          >
+            🏆 Top 10
+          </h2>
+
+          {leaderboardLoading ? (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 'clamp(40px, 8vw, 60px)',
+                color: wingShackTheme.colors.textSecondary,
+                fontFamily: wingShackTheme.typography.fontFamily.body,
+                fontSize: 'clamp(14px, 2vw, 16px)',
+              }}
+            >
+              Loading...
+            </div>
+          ) : leaderboardError ? (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 'clamp(20px, 4vw, 40px)',
+                gap: 'clamp(8px, 1.5vw, 12px)',
+              }}
+            >
+              <div
+                style={{
+                  color: wingShackTheme.colors.error,
+                  fontFamily: wingShackTheme.typography.fontFamily.body,
+                  fontSize: 'clamp(12px, 1.8vw, 14px)',
+                  textAlign: 'center',
+                }}
+              >
+                {leaderboardError}
+              </div>
+              <button
+                onClick={fetchLeaderboard}
+                style={{
+                  padding: 'clamp(8px, 1.5vw, 12px) clamp(16px, 2.5vw, 20px)',
+                  backgroundColor: wingShackTheme.colors.primary,
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: wingShackTheme.borderRadius.md,
+                  fontFamily: wingShackTheme.typography.fontFamily.body,
+                  fontSize: 'clamp(12px, 1.8vw, 14px)',
+                  fontWeight: wingShackTheme.typography.fontWeight.semibold,
+                  cursor: 'pointer',
+                  boxShadow: `0 2px 8px ${wingShackTheme.colors.primary}40`,
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          ) : leaderboard.length === 0 ? (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 'clamp(40px, 8vw, 60px)',
+                color: wingShackTheme.colors.textMuted,
+                fontFamily: wingShackTheme.typography.fontFamily.body,
+                fontSize: 'clamp(12px, 1.8vw, 14px)',
+                textAlign: 'center',
+              }}
+            >
+              No scores yet. Be the first!
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 'clamp(6px, 1vw, 8px)',
+                overflowY: 'auto',
+                flex: 1,
+              }}
+            >
+              {leaderboard.map((entry, index) => (
+                <motion.div
+                  key={entry.id || index}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.03 }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: 'clamp(8px, 1.2vw, 10px) clamp(10px, 1.5vw, 12px)',
+                    backgroundColor: index < 3 ? 'rgba(159, 8, 8, 0.08)' : 'rgba(0, 0, 0, 0.03)',
+                    borderRadius: wingShackTheme.borderRadius.sm,
+                    border: index < 3 ? `1px solid ${wingShackTheme.colors.primary}40` : '1px solid rgba(0, 0, 0, 0.1)',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'clamp(6px, 1vw, 8px)',
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontFamily: wingShackTheme.typography.fontFamily.display,
+                        fontSize: 'clamp(14px, 2vw, 18px)',
+                        fontWeight: wingShackTheme.typography.fontWeight.bold,
+                        color: index < 3 ? wingShackTheme.colors.primary : wingShackTheme.colors.textSecondary,
+                        minWidth: 'clamp(24px, 3vw, 30px)',
+                        textAlign: 'center',
+                      }}
+                    >
+                      #{index + 1}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: wingShackTheme.typography.fontFamily.body,
+                        fontSize: 'clamp(12px, 1.8vw, 14px)',
+                        fontWeight: wingShackTheme.typography.fontWeight.medium,
+                        color: wingShackTheme.colors.text,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        flex: 1,
+                      }}
+                    >
+                      {entry.player_name}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: wingShackTheme.typography.fontFamily.display,
+                      fontSize: 'clamp(14px, 2vw, 18px)',
+                      fontWeight: wingShackTheme.typography.fontWeight.bold,
+                      color: wingShackTheme.colors.primary,
+                    }}
+                  >
+                    {entry.score}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </GameCard>
+      </div>
 
 
       {/* Game Over Score Submission Overlay */}
@@ -275,14 +535,14 @@ export default function SnakePage() {
                     onClick={handleSubmitScore}
                     disabled={submitting || playerName.trim().length < 2}
                     style={{
-                      padding: 'clamp(12px, 2vw, 16px)',
+                      padding: 'clamp(14px, 2.5vw, 18px) clamp(24px, 4vw, 32px)',
                       backgroundColor:
                         submitting || playerName.trim().length < 2
                           ? wingShackTheme.colors.textMuted
                           : wingShackTheme.colors.primary,
                       color: '#ffffff',
                       border: 'none',
-                      borderRadius: wingShackTheme.borderRadius.md,
+                      borderRadius: wingShackTheme.borderRadius.lg,
                       fontFamily: wingShackTheme.typography.fontFamily.display,
                       fontSize: 'clamp(16px, 2.5vw, 20px)',
                       fontWeight: wingShackTheme.typography.fontWeight.bold,
@@ -290,18 +550,21 @@ export default function SnakePage() {
                         submitting || playerName.trim().length < 2
                           ? 'not-allowed'
                           : 'pointer',
-                      boxShadow: `0 4px 12px ${wingShackTheme.colors.primary}40`,
+                      boxShadow: submitting || playerName.trim().length < 2 
+                        ? '0 2px 4px rgba(0, 0, 0, 0.1)'
+                        : '0 4px 12px rgba(159, 8, 8, 0.3)',
+                      transition: 'all 0.2s ease',
                       opacity: submitting || playerName.trim().length < 2 ? 0.6 : 1,
                     }}
                     whileHover={
                       submitting || playerName.trim().length < 2
                         ? {}
-                        : { scale: 1.02 }
+                        : { y: -2, boxShadow: '0 6px 16px rgba(159, 8, 8, 0.4)' }
                     }
                     whileTap={
                       submitting || playerName.trim().length < 2
                         ? {}
-                        : { scale: 0.98 }
+                        : { y: 0 }
                     }
                   >
                     {submitting ? 'Submitting...' : 'Submit Score'}

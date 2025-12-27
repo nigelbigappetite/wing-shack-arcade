@@ -38,6 +38,7 @@ export default function WingTapFrenzyPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          width: '100%',
           marginTop: 'clamp(8px, 2vw, 16px)',
           textDecoration: 'none',
           cursor: 'pointer',

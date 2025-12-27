@@ -35,6 +35,7 @@ export const WingShackLogo: React.FC<WingShackLogoProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         gap: showText ? wingShackTheme.spacing.md : 0,
+        margin: '0 auto',
       }}
     >
       {/* Logo Image */}

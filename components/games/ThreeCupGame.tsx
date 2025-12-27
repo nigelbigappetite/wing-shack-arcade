@@ -696,18 +696,18 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
             whileTap={{ scale: 0.95 }}
             onClick={resetGame}
             style={{
-              padding: 'clamp(12px, 2.5vw, 16px) clamp(32px, 6vw, 48px)',
+              padding: 'clamp(14px, 2.5vw, 18px) clamp(32px, 5vw, 48px)',
               backgroundColor: wingShackTheme.colors.primary,
               color: '#ffffff',
               border: 'none',
               borderRadius: wingShackTheme.borderRadius.lg,
               fontFamily: wingShackTheme.typography.fontFamily.display,
-              fontSize: 'clamp(16px, 3.5vw, 20px)',
+              fontSize: 'clamp(16px, 2.5vw, 20px)',
               fontWeight: wingShackTheme.typography.fontWeight.bold,
-              letterSpacing: '2px',
+              letterSpacing: '1px',
               cursor: 'pointer',
-              boxShadow: `0 8px 24px ${wingShackTheme.colors.primary}50`,
-              transition: 'all 0.3s ease',
+              boxShadow: '0 4px 12px rgba(159, 8, 8, 0.3)',
+              transition: 'all 0.2s ease',
             }}
           >
             PLAY AGAIN

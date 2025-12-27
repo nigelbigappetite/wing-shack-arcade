@@ -772,23 +772,23 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                     }, 50);
                   }}
                   style={{
-                    padding: 'clamp(12px, 2vw, 16px) clamp(32px, 5vw, 48px)',
+                    padding: 'clamp(14px, 2.5vw, 18px) clamp(32px, 5vw, 48px)',
                     backgroundColor: wingShackTheme.colors.secondary,
-                    color: '#ffffff',
+                    color: '#000000',
                     border: 'none',
                     borderRadius: wingShackTheme.borderRadius.lg,
                     fontFamily: wingShackTheme.typography.fontFamily.display,
-                    fontSize: 'clamp(18px, 3vw, 24px)',
+                    fontSize: 'clamp(16px, 2.5vw, 20px)',
                     fontWeight: wingShackTheme.typography.fontWeight.bold,
-                    letterSpacing: '2px',
+                    letterSpacing: '1px',
                     cursor: 'pointer',
-                    boxShadow: `0 6px 20px ${wingShackTheme.colors.secondary}80`,
-                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                    transition: 'all 0.2s ease',
                     marginTop: 'clamp(16px, 3vw, 24px)',
                     opacity: 1,
                   }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ y: -2, boxShadow: '0 6px 16px rgba(0, 0, 0, 0.2)' }}
+                  whileTap={{ y: 0 }}
                 >
                   NEXT LEVEL →
                 </motion.button>
@@ -809,18 +809,18 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                     setLevelCompleted(false);
                   }}
                   style={{
-                    padding: 'clamp(12px, 2vw, 16px) clamp(32px, 5vw, 48px)',
+                    padding: 'clamp(14px, 2.5vw, 18px) clamp(32px, 5vw, 48px)',
                     backgroundColor: wingShackTheme.colors.primary,
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: wingShackTheme.borderRadius.lg,
                     fontFamily: wingShackTheme.typography.fontFamily.display,
-                    fontSize: 'clamp(18px, 3vw, 24px)',
+                    fontSize: 'clamp(16px, 2.5vw, 20px)',
                     fontWeight: wingShackTheme.typography.fontWeight.bold,
-                    letterSpacing: '2px',
+                    letterSpacing: '1px',
                     cursor: 'pointer',
-                    boxShadow: `0 6px 20px ${wingShackTheme.colors.primary}80`,
-                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 12px rgba(159, 8, 8, 0.3)',
+                    transition: 'all 0.2s ease',
                     marginTop: 'clamp(16px, 3vw, 24px)',
                     opacity: 1,
                   }}
@@ -917,23 +917,23 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                   setLevelCompleted(false);
                 }}
                 style={{
-                  padding: 'clamp(12px, 2vw, 16px) clamp(32px, 5vw, 48px)',
+                  padding: 'clamp(14px, 2.5vw, 18px) clamp(32px, 5vw, 48px)',
                   backgroundColor: wingShackTheme.colors.secondary,
-                  color: '#ffffff',
+                  color: '#000000',
                   border: 'none',
                   borderRadius: wingShackTheme.borderRadius.lg,
                   fontFamily: wingShackTheme.typography.fontFamily.display,
-                  fontSize: 'clamp(18px, 3vw, 24px)',
+                  fontSize: 'clamp(16px, 2.5vw, 20px)',
                   fontWeight: wingShackTheme.typography.fontWeight.bold,
-                  letterSpacing: '2px',
+                  letterSpacing: '1px',
                   cursor: 'pointer',
-                  boxShadow: `0 6px 20px ${wingShackTheme.colors.secondary}80`,
-                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  transition: 'all 0.2s ease',
                   marginTop: 'clamp(16px, 3vw, 24px)',
                   opacity: 1,
                 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ y: -2, boxShadow: '0 6px 16px rgba(0, 0, 0, 0.2)' }}
+                whileTap={{ y: 0 }}
               >
                 Play Again
               </motion.button>
