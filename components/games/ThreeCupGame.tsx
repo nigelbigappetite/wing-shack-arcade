@@ -23,6 +23,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
   const [shuffleCount, setShuffleCount] = useState(0);
   const [showBallPlacement, setShowBallPlacement] = useState(false);
   const [hasShuffled, setHasShuffled] = useState(false); // Track if shuffling has completed
+  const [isGameActive, setIsGameActive] = useState(false); // Track if game has started
   const shuffleAnimationRef = useRef<number>();
   const shuffleSequenceRef = useRef<Array<{ from: number; to: number }>>([]);
   const shuffleAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -227,6 +228,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     setShowBallPlacement(false);
     setHasShuffled(false); // Reset shuffle completion state
     setCupPositions([0, 1, 2]);
+    setIsGameActive(false); // Reset game active state
     
     // Stop shuffle sound effect
     if (shuffleAudioRef.current) {
@@ -242,14 +244,13 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
     if (shuffleAnimationRef.current) {
       cancelAnimationFrame(shuffleAnimationRef.current);
     }
-    // Start new game with placement animation
-    setTimeout(() => shuffleCups(), 300);
-  }, [shuffleCups]);
+  }, []);
 
   // Lifecycle integration
   const lifecycle = useGameLifecycle({
     onReset: resetGame,
     onStart: () => {
+      setIsGameActive(true);
       if (!hasGuessed && !isShuffling && !showBallPlacement) {
         shuffleCups();
       }
@@ -372,8 +373,88 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
           position: 'relative',
         }}
       >
-        {/* Instructions */}
-        {!hasGuessed && !isShuffling && !showBallPlacement && (
+        {/* Start Screen Overlay */}
+        {!isGameActive && !hasGuessed && !isShuffling && !showBallPlacement && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 'clamp(16px, 3vw, 24px)',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              zIndex: 20,
+              padding: 'clamp(20px, 4vw, 40px)',
+            }}
+          >
+            <div
+              style={{
+                fontSize: 'clamp(64px, 10vw, 96px)',
+                marginBottom: 'clamp(8px, 1.5vw, 16px)',
+              }}
+            >
+              🎯
+            </div>
+            <div
+              style={{
+                fontFamily: wingShackTheme.typography.fontFamily.display,
+                fontSize: 'clamp(24px, 4vw, 32px)',
+                fontWeight: wingShackTheme.typography.fontWeight.bold,
+                color: wingShackTheme.colors.primary,
+                textAlign: 'center',
+              }}
+            >
+              THREE CUP GAME
+            </div>
+            <div
+              style={{
+                fontFamily: wingShackTheme.typography.fontFamily.body,
+                fontSize: 'clamp(14px, 2vw, 18px)',
+                color: wingShackTheme.colors.textSecondary,
+                textAlign: 'center',
+                maxWidth: '400px',
+                marginBottom: 'clamp(16px, 3vw, 24px)',
+              }}
+            >
+              Press start and follow the ball.
+            </div>
+            <motion.button
+              onClick={() => {
+                setIsGameActive(true);
+                shuffleCups();
+              }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{
+                padding: 'clamp(12px, 2vw, 16px) clamp(32px, 5vw, 48px)',
+                backgroundColor: wingShackTheme.colors.primary,
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: wingShackTheme.borderRadius.lg,
+                fontFamily: wingShackTheme.typography.fontFamily.display,
+                fontSize: 'clamp(18px, 3vw, 24px)',
+                fontWeight: wingShackTheme.typography.fontWeight.bold,
+                letterSpacing: '2px',
+                cursor: 'pointer',
+                boxShadow: `0 6px 20px ${wingShackTheme.colors.primary}80`,
+                transition: 'all 0.3s ease',
+                opacity: 1,
+              }}
+            >
+              START
+            </motion.button>
+          </motion.div>
+        )}
+
+        {/* Instructions - shown during game */}
+        {isGameActive && !hasGuessed && !isShuffling && !showBallPlacement && (
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
