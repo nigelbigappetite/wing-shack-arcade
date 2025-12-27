@@ -119,6 +119,7 @@ export default function SnakePage() {
           margin: '0 auto',
           padding: 'clamp(8px, 2vw, 16px)',
           overflow: 'hidden',
+          borderRadius: 0,
         }}
       >
         <GameShell
