@@ -58,7 +58,7 @@ export default function WingTapFrenzyPage() {
       >
         <GameShell
           title="Wing Tap Frenzy"
-          howToPlay="Level 1: Tap 20 wings in 15 seconds. Level 2: Tap 40 wings in 20 seconds (wings disappear faster). Level 3: Tap 40 wings in 20 seconds - avoid the red chilli (🌶️) as it removes a point! Wings disappear faster in later levels."
+          howToPlay="Level 1: Tap 20 wings in 10 seconds. Level 2: Tap 30 wings in 10 seconds (wings disappear faster). Level 3: Tap 40 wings in 15 seconds - avoid the red chilli (🌶️) as it removes a point! Wings disappear faster in later levels."
           onStart={() => console.log('Game started')}
           onReset={() => {
             console.log('Game reset');

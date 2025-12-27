@@ -20,8 +20,8 @@ interface WingTapFrenzyProps {
 
 const LEVEL_CONFIG = [
   { target: 20, duration: 10, spawnMin: 1000, spawnMax: 2000, wingLifetime: 1000 }, // Level 1: 20 wings in 10s, 1-2s spawn, 1s lifetime
-  { target: 40, duration: 20, spawnMin: 500, spawnMax: 1200, wingLifetime: 600 }, // Level 2: 40 wings in 20s, 0.5-1.2s spawn, 0.6s lifetime
-  { target: 40, duration: 20, spawnMin: 500, spawnMax: 1200, wingLifetime: 600 }, // Level 3: 40 wings in 20s, 0.5-1.2s spawn, 0.6s lifetime, has negative items
+  { target: 30, duration: 10, spawnMin: 500, spawnMax: 1200, wingLifetime: 600 }, // Level 2: 30 wings in 10s, 0.5-1.2s spawn, 0.6s lifetime
+  { target: 40, duration: 15, spawnMin: 500, spawnMax: 1200, wingLifetime: 600 }, // Level 3: 40 wings in 15s, 0.5-1.2s spawn, 0.6s lifetime, has negative items
 ];
 
 const MAX_WINGS = 2; // Max 1-2 wings visible at once
@@ -220,8 +220,8 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
           setShowLevelMessage(true);
           // Don't auto-advance - wait for button click
         } else {
-          // All levels complete
-          setLevelMessage('YOU COMPLETED WING TAP FRENZY!\nALL LEVELS COMPLETE!');
+          // All levels complete (Level 3)
+          setLevelMessage('GAME COMPLETE, YOU WIN!');
           setShowLevelMessage(true);
         }
       } else {
