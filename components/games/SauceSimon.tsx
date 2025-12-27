@@ -336,11 +336,13 @@ const SauceSimon: React.FC<SauceSimonProps> = ({ onScore }) => {
               right: 'clamp(8px, 1.5vw, 12px)',
               display: 'flex',
               justifyContent: 'space-between',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               gap: 'clamp(8px, 1.5vw, 12px)',
               zIndex: 10,
               pointerEvents: 'none',
-              flexWrap: 'wrap',
+              flexWrap: 'nowrap',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
             }}
           >
             {/* Round Number */}
@@ -350,16 +352,19 @@ const SauceSimon: React.FC<SauceSimonProps> = ({ onScore }) => {
                 padding: 'clamp(6px, 1.2vw, 10px) clamp(12px, 2vw, 18px)',
                 borderRadius: wingShackTheme.borderRadius.lg,
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                flexShrink: 0,
+                flexShrink: 1,
+                minWidth: 0,
               }}
             >
               <div
                 style={{
                   fontFamily: wingShackTheme.typography.fontFamily.display,
-                  fontSize: 'clamp(14px, 2.5vw, 20px)',
+                  fontSize: 'clamp(12px, 2vw, 18px)',
                   fontWeight: wingShackTheme.typography.fontWeight.bold,
                   color: wingShackTheme.colors.primary,
                   whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
                 }}
               >
                 Round {currentRound}
@@ -373,16 +378,19 @@ const SauceSimon: React.FC<SauceSimonProps> = ({ onScore }) => {
                 padding: 'clamp(6px, 1.2vw, 10px) clamp(12px, 2vw, 18px)',
                 borderRadius: wingShackTheme.borderRadius.lg,
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                flexShrink: 0,
+                flexShrink: 1,
+                minWidth: 0,
               }}
             >
               <div
                 style={{
                   fontFamily: wingShackTheme.typography.fontFamily.display,
-                  fontSize: 'clamp(14px, 2.5vw, 20px)',
+                  fontSize: 'clamp(12px, 2vw, 18px)',
                   fontWeight: wingShackTheme.typography.fontWeight.bold,
                   color: wingShackTheme.colors.secondary,
                   whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
                 }}
               >
                 Score: {score}

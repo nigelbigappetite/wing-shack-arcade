@@ -195,56 +195,26 @@ export default function Home() {
                     {game.icon === 'three-cup-logo' ? (
                       <ThreeCupLogo size="lg" />
                     ) : game.icon === 'sauce-simon' ? (
-                      <div
+                      <motion.div
+                        animate={{
+                          scale: [1, 1.1, 1],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: 'easeInOut',
+                        }}
                         style={{
-                          width: 'clamp(80px, 12vw, 120px)',
-                          height: 'clamp(80px, 12vw, 120px)',
+                          fontSize: 'clamp(80px, 12vw, 120px)',
+                          lineHeight: 1,
+                          filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          position: 'relative',
-                          flexDirection: 'column',
-                          gap: 'clamp(8px, 1.5vw, 12px)',
                         }}
                       >
-                        {/* Brain Emoji */}
-                        <motion.div
-                          animate={{
-                            scale: [1, 1.1, 1],
-                          }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            ease: 'easeInOut',
-                          }}
-                          style={{
-                            fontSize: 'clamp(40px, 6vw, 60px)',
-                            lineHeight: 1,
-                            filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2))',
-                          }}
-                        >
-                          🧠
-                        </motion.div>
-                        {/* Mascot */}
-                        <div
-                          style={{
-                            position: 'relative',
-                            width: 'clamp(60px, 9vw, 90px)',
-                            height: 'clamp(60px, 9vw, 90px)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <Image
-                            src="/mascot - no background_.png"
-                            alt="Wingston thinking"
-                            width={90}
-                            height={90}
-                            style={{ objectFit: 'contain' }}
-                          />
-                        </div>
-                      </div>
+                        🧠
+                      </motion.div>
                     ) : (
                       game.icon
                     )}
