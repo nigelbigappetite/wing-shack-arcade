@@ -11,6 +11,7 @@ interface Wing {
   x: number;
   y: number;
   createdAt: number;
+  isNegative?: boolean; // true for negative items (bone/chilli)
 }
 
 interface WingTapFrenzyProps {
@@ -18,8 +19,9 @@ interface WingTapFrenzyProps {
 }
 
 const LEVEL_CONFIG = [
-  { target: 20, duration: 15, spawnMin: 1000, spawnMax: 2000 }, // Level 1: 20 wings in 15s, 1-2s spawn
-  { target: 20, duration: 20, spawnMin: 500, spawnMax: 1200 }, // Level 2: 20 wings in 20s, 0.5-1.2s spawn (faster)
+  { target: 20, duration: 15, spawnMin: 1000, spawnMax: 2000, wingLifetime: 1000 }, // Level 1: 20 wings in 15s, 1-2s spawn, 1s lifetime
+  { target: 40, duration: 20, spawnMin: 500, spawnMax: 1200, wingLifetime: 600 }, // Level 2: 40 wings in 20s, 0.5-1.2s spawn, 0.6s lifetime
+  { target: 40, duration: 20, spawnMin: 500, spawnMax: 1200, wingLifetime: 600 }, // Level 3: 40 wings in 20s, 0.5-1.2s spawn, 0.6s lifetime, has negative items
 ];
 
 const MAX_WINGS = 2; // Max 1-2 wings visible at once
@@ -35,6 +37,8 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
   const [currentLevel, setCurrentLevel] = useState(0);
   const [showLevelMessage, setShowLevelMessage] = useState(false);
   const [levelMessage, setLevelMessage] = useState('');
+  const [showTryAgain, setShowTryAgain] = useState(false);
+  const negativeSpawnCounterRef = useRef<number>(0); // Track spawns for negative item frequency
 
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -89,13 +93,14 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
     };
   }, []);
 
-  // Spawn a new wing
+  // Spawn a new wing or negative item
   const spawnWing = useCallback(() => {
     setWings((prevWings) => {
-      // Remove wings that are too old (more than 1 second)
+      const levelConfig = LEVEL_CONFIG[currentLevel];
       const now = Date.now();
+      // Remove items that are too old based on level
       const filteredWings = prevWings.filter(
-        (wing) => now - wing.createdAt < 1000
+        (wing) => now - wing.createdAt < levelConfig.wingLifetime
       );
 
       // Don't spawn if we already have max wings
@@ -106,24 +111,41 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
       const position = generateRandomPosition(filteredWings);
       if (!position) return filteredWings;
 
+      // In Level 3, sometimes spawn negative item (1 per 6-10 wings)
+      const isLevel3 = currentLevel === 2;
+      let isNegative = false;
+      if (isLevel3) {
+        negativeSpawnCounterRef.current++;
+        // Spawn negative item roughly 1 in every 8 wings (between 6-10)
+        if (negativeSpawnCounterRef.current >= 8) {
+          isNegative = true;
+          negativeSpawnCounterRef.current = 0;
+        }
+      }
+
       const newWing: Wing = {
-        id: `wing-${Date.now()}-${Math.random()}`,
+        id: `${isNegative ? 'negative' : 'wing'}-${Date.now()}-${Math.random()}`,
         x: position.x,
         y: position.y,
         createdAt: now,
+        isNegative: isNegative,
       };
 
       return [...filteredWings, newWing];
     });
-  }, [generateRandomPosition]);
+  }, [generateRandomPosition, currentLevel]);
 
-  // Handle wing tap
+  // Handle wing/negative item tap
   const handleWingTap = useCallback(
-    (wingId: string) => {
+    (wingId: string, isNegative: boolean) => {
       if (!isGameActiveRef.current || gameEndedRef.current) return;
 
-      // Play tap sound
-      if (wingTapAudioRef.current && audioUnlockedRef.current) {
+      // Find the tapped item
+      const tappedItem = wings.find((w) => w.id === wingId);
+      if (!tappedItem) return;
+
+      // Play tap sound only for positive items
+      if (!isNegative && wingTapAudioRef.current && audioUnlockedRef.current) {
         try {
           wingTapAudioRef.current.currentTime = 0;
           wingTapAudioRef.current.play().catch(() => {
@@ -135,21 +157,33 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
       }
 
       setWings((prevWings) => prevWings.filter((wing) => wing.id !== wingId));
-      setScore((prev) => {
-        const newScore = prev + 1;
-        scoreRef.current = newScore; // Update ref
-        onScore?.(newScore);
-        return newScore;
-      });
+      
+      if (isNegative) {
+        // Subtract 1 point (minimum 0)
+        setScore((prev) => {
+          const newScore = Math.max(0, prev - 1);
+          scoreRef.current = newScore; // Update ref
+          onScore?.(newScore);
+          return newScore;
+        });
+      } else {
+        // Add 1 point
+        setScore((prev) => {
+          const newScore = prev + 1;
+          scoreRef.current = newScore; // Update ref
+          onScore?.(newScore);
+          return newScore;
+        });
+      }
 
-      // Spawn a new wing after a short delay
+      // Spawn a new item after a short delay
       setTimeout(() => {
         if (isGameActiveRef.current && !gameEndedRef.current) {
           spawnWing();
         }
       }, 200);
     },
-    [onScore, spawnWing]
+    [onScore, spawnWing, wings]
   );
 
   // Game timer using requestAnimationFrame for precision
@@ -182,20 +216,62 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
       if (currentScore >= target) {
         // Level complete - check if there's a next level
         if (currentLevel < LEVEL_CONFIG.length - 1) {
-          setLevelMessage('LEVEL COMPLETE!');
+          setLevelMessage(`LEVEL ${currentLevel + 1} COMPLETE!`);
           setShowLevelMessage(true);
-          // Don't auto-advance - wait for button click
+          // Auto-advance after 800-1200ms pause
+          const nextLevel = currentLevel + 1;
+          setTimeout(() => {
+            setShowLevelMessage(false);
+            // Advance to next level
+            setCurrentLevel(nextLevel);
+            setScore(0);
+            scoreRef.current = 0;
+            negativeSpawnCounterRef.current = 0;
+            setTimeRemaining(LEVEL_CONFIG[nextLevel].duration);
+            setGameEnded(false);
+            gameEndedRef.current = false;
+            setWings([]);
+            // Start next level - use direct state updates instead of calling startGame
+            pausedTimeRef.current = 0;
+            lastPauseTimeRef.current = 0;
+            startTimeRef.current = Date.now();
+            isGameActiveRef.current = true;
+            setIsGameActive(true);
+            // Start timer
+            animationFrameRef.current = requestAnimationFrame(updateTimer);
+            // Spawn first wing
+            setTimeout(() => {
+              if (isGameActiveRef.current && !gameEndedRef.current) {
+                spawnWing();
+              }
+            }, 500);
+            // Set up wing spawning
+            const spawnInterval = () => {
+              if (!isGameActiveRef.current || gameEndedRef.current) return;
+              const levelConfig = LEVEL_CONFIG[nextLevel];
+              const delay = Math.random() * (levelConfig.spawnMax - levelConfig.spawnMin) + levelConfig.spawnMin;
+              wingSpawnRef.current = setTimeout(() => {
+                if (isGameActiveRef.current && !gameEndedRef.current) {
+                  spawnWing();
+                  spawnInterval();
+                }
+              }, delay);
+            };
+            spawnInterval();
+          }, 1000); // 1000ms pause
         } else {
           // All levels complete
-          setLevelMessage('ALL LEVELS COMPLETE!');
+          setLevelMessage('YOU COMPLETED WING TAP FRENZY!\nALL LEVELS COMPLETE!');
           setShowLevelMessage(true);
         }
       } else {
         // Failed to meet target
-        setLevelMessage(`YOU LOSE!\nTarget: ${target}\nYou got: ${currentScore}`);
+        setLevelMessage(`TRY AGAIN!\nTarget: ${target}\nYou got: ${currentScore}`);
         setShowLevelMessage(true);
+        setShowTryAgain(true);
       }
       
+      // Clean up all timers
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
@@ -207,7 +283,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
     } else {
       animationFrameRef.current = requestAnimationFrame(updateTimer);
     }
-  }, [currentLevel, score]);
+  }, [currentLevel, score, spawnWing]);
 
   // Start the game
   const startGame = useCallback(() => {
@@ -296,7 +372,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
     spawnInterval();
   }, [updateTimer, spawnWing, currentLevel]);
 
-  // Reset the game
+  // Reset the game (full reset to Level 1)
   const resetGame = useCallback(() => {
     isGameActiveRef.current = false;
     gameEndedRef.current = false;
@@ -304,8 +380,10 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
     setGameEnded(false);
     setScore(0);
     scoreRef.current = 0; // Reset score ref
+    negativeSpawnCounterRef.current = 0; // Reset negative spawn counter
     setCurrentLevel(0);
     setShowLevelMessage(false);
+    setShowTryAgain(false);
     setTimeRemaining(LEVEL_CONFIG[0].duration);
     setWings([]);
     pausedTimeRef.current = 0;
@@ -505,10 +583,10 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                 stiffness: 300,
                 damping: 20,
               }}
-              onClick={() => handleWingTap(wing.id)}
+              onClick={() => handleWingTap(wing.id, wing.isNegative || false)}
               onTouchStart={(e) => {
                 e.preventDefault();
-                handleWingTap(wing.id);
+                handleWingTap(wing.id, wing.isNegative || false);
               }}
               style={{
                 position: 'absolute',
@@ -522,7 +600,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                 zIndex: 5,
               }}
             >
-              {/* Wing Emoji/Icon */}
+              {/* Wing or Negative Item Emoji/Icon */}
               <div
                 style={{
                   width: '100%',
@@ -531,11 +609,14 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))',
+                  filter: wing.isNegative 
+                    ? 'drop-shadow(0 4px 8px rgba(255, 0, 0, 0.5))' 
+                    : 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))',
                   transition: 'transform 0.1s ease',
+                  transform: wing.isNegative ? 'rotate(45deg)' : 'none',
                 }}
               >
-                🍗
+                {wing.isNegative ? '🌶️' : '🍗'}
               </div>
             </motion.div>
           ))}
@@ -581,29 +662,21 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                 {levelMessage}
               </motion.div>
               
-              {/* Next Level Button - only show if level complete and not all levels done */}
-              {levelMessage.includes('LEVEL COMPLETE') && currentLevel < LEVEL_CONFIG.length - 1 && (
+              {/* Try Again Button - show on failure */}
+              {showTryAgain && (
                 <motion.button
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.3 }}
                   onClick={() => {
+                    // Full reset to Level 1
+                    resetGame();
                     setShowLevelMessage(false);
-                    // Advance to next level
-                    setCurrentLevel(currentLevel + 1);
-                    setScore(0);
-                    scoreRef.current = 0;
-                    setTimeRemaining(LEVEL_CONFIG[currentLevel + 1].duration);
-                    setGameEnded(false);
-                    gameEndedRef.current = false;
-                    // Start next level
-                    setTimeout(() => {
-                      startGame();
-                    }, 100);
+                    setShowTryAgain(false);
                   }}
                   style={{
                     padding: 'clamp(12px, 2vw, 16px) clamp(32px, 5vw, 48px)',
-                    backgroundColor: wingShackTheme.colors.secondary,
+                    backgroundColor: wingShackTheme.colors.primary,
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: wingShackTheme.borderRadius.lg,
@@ -612,13 +685,13 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                     fontWeight: wingShackTheme.typography.fontWeight.bold,
                     letterSpacing: '2px',
                     cursor: 'pointer',
-                    boxShadow: `0 6px 20px ${wingShackTheme.colors.secondary}50`,
+                    boxShadow: `0 6px 20px ${wingShackTheme.colors.primary}50`,
                     transition: 'all 0.3s ease',
                   }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  NEXT LEVEL →
+                  TRY AGAIN
                 </motion.button>
               )}
             </motion.div>
