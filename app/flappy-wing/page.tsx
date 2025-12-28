@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import GameShell from '@/components/GameShell';
 import FlappyWing from '@/components/games/FlappyWing';
 import { wingShackTheme } from '@/theme/wingShackTheme';
@@ -11,11 +11,67 @@ import WingShackLogo from '@/components/ui/WingShackLogo';
 export default function FlappyWingPage() {
   const [resetKey, setResetKey] = useState(0);
   const [gameOverScore, setGameOverScore] = useState<number | null>(null);
+  const [playerName, setPlayerName] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   // Handle game over
   const handleGameOver = useCallback((finalScore: number) => {
     setGameOverScore(finalScore);
+    setPlayerName('');
+    setSubmitError(null);
+    setSubmitSuccess(false);
   }, []);
+
+  // Handle score submission
+  const handleSubmitScore = useCallback(async () => {
+    if (!gameOverScore || gameOverScore < 1) return;
+    
+    const trimmedName = playerName.trim();
+    if (trimmedName.length < 2 || trimmedName.length > 16) {
+      setSubmitError('Name must be between 2 and 16 characters');
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9\s]+$/.test(trimmedName)) {
+      setSubmitError('Name can only contain letters, numbers, and spaces');
+      return;
+    }
+
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const response = await fetch('/api/leaderboard/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          game_id: 'flappy-wing',
+          player_name: trimmedName,
+          score: gameOverScore,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit score');
+      }
+
+      setSubmitSuccess(true);
+      // Clear game over state after a delay
+      setTimeout(() => {
+        setGameOverScore(null);
+        setSubmitSuccess(false);
+      }, 2000);
+    } catch (error: any) {
+      setSubmitError(error.message || 'Failed to submit score');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [gameOverScore, playerName]);
 
   return (
     <div
@@ -83,6 +139,223 @@ export default function FlappyWingPage() {
           />
         </GameShell>
       </div>
+
+      {/* Game Over Score Submission Overlay */}
+      <AnimatePresence>
+        {gameOverScore !== null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              padding: 'clamp(16px, 3vw, 24px)',
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              style={{
+                backgroundColor: wingShackTheme.colors.backgroundCard,
+                borderRadius: wingShackTheme.borderRadius.xl,
+                padding: 'clamp(24px, 5vw, 40px)',
+                maxWidth: 'clamp(300px, 90vw, 500px)',
+                width: '100%',
+                boxShadow: wingShackTheme.shadows.cardElevated,
+              }}
+            >
+              <h2
+                style={{
+                  fontFamily: wingShackTheme.typography.fontFamily.display,
+                  fontSize: 'clamp(24px, 4vw, 32px)',
+                  fontWeight: wingShackTheme.typography.fontWeight.bold,
+                  color: wingShackTheme.colors.primary,
+                  textAlign: 'center',
+                  margin: '0 0 clamp(16px, 3vw, 24px) 0',
+                }}
+              >
+                Game Over!
+              </h2>
+
+              <div
+                style={{
+                  fontFamily: wingShackTheme.typography.fontFamily.display,
+                  fontSize: 'clamp(32px, 5vw, 48px)',
+                  fontWeight: wingShackTheme.typography.fontWeight.bold,
+                  color: wingShackTheme.colors.text,
+                  textAlign: 'center',
+                  margin: '0 0 clamp(24px, 4vw, 32px) 0',
+                }}
+              >
+                Final Score: {gameOverScore}
+              </div>
+
+              {gameOverScore >= 1 && !submitSuccess && (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 'clamp(12px, 2vw, 16px)',
+                  }}
+                >
+                  <div>
+                    <label
+                      htmlFor="player-name-flappy"
+                      style={{
+                        display: 'block',
+                        fontFamily: wingShackTheme.typography.fontFamily.body,
+                        fontSize: 'clamp(14px, 2vw, 18px)',
+                        fontWeight: wingShackTheme.typography.fontWeight.medium,
+                        color: wingShackTheme.colors.text,
+                        marginBottom: 'clamp(8px, 1.5vw, 12px)',
+                      }}
+                    >
+                      Enter your name:
+                    </label>
+                    <input
+                      id="player-name-flappy"
+                      type="text"
+                      value={playerName}
+                      onChange={(e) => {
+                        setPlayerName(e.target.value);
+                        setSubmitError(null);
+                      }}
+                      maxLength={16}
+                      placeholder="2-16 characters"
+                      disabled={submitting}
+                      style={{
+                        width: '100%',
+                        padding: 'clamp(10px, 2vw, 14px)',
+                        fontSize: 'clamp(14px, 2vw, 18px)',
+                        fontFamily: wingShackTheme.typography.fontFamily.body,
+                        border: `2px solid ${submitError ? wingShackTheme.colors.error : 'rgba(0, 0, 0, 0.2)'}`,
+                        borderRadius: wingShackTheme.borderRadius.md,
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        backgroundColor: wingShackTheme.colors.backgroundCard,
+                        color: wingShackTheme.colors.text,
+                      }}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !submitting) {
+                          handleSubmitScore();
+                        }
+                      }}
+                    />
+                    {submitError && (
+                      <div
+                        style={{
+                          marginTop: 'clamp(6px, 1vw, 8px)',
+                          color: wingShackTheme.colors.error,
+                          fontSize: 'clamp(12px, 1.8vw, 16px)',
+                          fontFamily: wingShackTheme.typography.fontFamily.body,
+                        }}
+                      >
+                        {submitError}
+                      </div>
+                    )}
+                  </div>
+
+                  <motion.button
+                    onClick={handleSubmitScore}
+                    disabled={submitting || playerName.trim().length < 2}
+                    style={{
+                      padding: 'clamp(14px, 2.5vw, 18px) clamp(24px, 4vw, 32px)',
+                      backgroundColor:
+                        submitting || playerName.trim().length < 2
+                          ? wingShackTheme.colors.textMuted
+                          : wingShackTheme.colors.primary,
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: wingShackTheme.borderRadius.lg,
+                      fontFamily: wingShackTheme.typography.fontFamily.display,
+                      fontSize: 'clamp(16px, 2.5vw, 20px)',
+                      fontWeight: wingShackTheme.typography.fontWeight.bold,
+                      cursor:
+                        submitting || playerName.trim().length < 2
+                          ? 'not-allowed'
+                          : 'pointer',
+                      boxShadow: submitting || playerName.trim().length < 2 
+                        ? '0 2px 4px rgba(0, 0, 0, 0.1)'
+                        : '0 4px 12px rgba(159, 8, 8, 0.3)',
+                      transition: 'all 0.2s ease',
+                      opacity: submitting || playerName.trim().length < 2 ? 0.6 : 1,
+                    }}
+                    whileHover={
+                      submitting || playerName.trim().length < 2
+                        ? {}
+                        : { y: -2, boxShadow: '0 6px 16px rgba(159, 8, 8, 0.4)' }
+                    }
+                    whileTap={
+                      submitting || playerName.trim().length < 2
+                        ? {}
+                        : { y: 0 }
+                    }
+                  >
+                    {submitting ? 'Submitting...' : 'Submit Score'}
+                  </motion.button>
+                </div>
+              )}
+
+              {submitSuccess && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    padding: 'clamp(16px, 3vw, 24px)',
+                    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                    borderRadius: wingShackTheme.borderRadius.md,
+                    textAlign: 'center',
+                    color: wingShackTheme.colors.success,
+                    fontFamily: wingShackTheme.typography.fontFamily.body,
+                    fontSize: 'clamp(16px, 2.5vw, 20px)',
+                    fontWeight: wingShackTheme.typography.fontWeight.semibold,
+                    marginTop: 'clamp(16px, 3vw, 24px)',
+                  }}
+                >
+                  Score submitted successfully! 🎉
+                </motion.div>
+              )}
+
+              {(!submitSuccess || gameOverScore < 1) && (
+                <motion.button
+                  onClick={() => {
+                    setGameOverScore(null);
+                    setSubmitSuccess(false);
+                    setResetKey((prev) => prev + 1);
+                  }}
+                  style={{
+                    marginTop: 'clamp(16px, 3vw, 24px)',
+                    padding: 'clamp(10px, 2vw, 14px)',
+                    backgroundColor: 'transparent',
+                    color: wingShackTheme.colors.textSecondary,
+                    border: `2px solid ${wingShackTheme.colors.textSecondary}40`,
+                    borderRadius: wingShackTheme.borderRadius.md,
+                    fontFamily: wingShackTheme.typography.fontFamily.body,
+                    fontSize: 'clamp(14px, 2vw, 18px)',
+                    fontWeight: wingShackTheme.typography.fontWeight.medium,
+                    cursor: 'pointer',
+                    width: '100%',
+                  }}
+                  whileHover={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Close
+                </motion.button>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

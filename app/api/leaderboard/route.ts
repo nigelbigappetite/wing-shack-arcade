@@ -8,10 +8,10 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const gameId = searchParams.get('game_id');
 
-    // Only allow snake game
-    if (gameId !== 'snake') {
+    // Only allow snake and flappy-wing games
+    if (gameId !== 'snake' && gameId !== 'flappy-wing') {
       return NextResponse.json(
-        { error: 'Invalid game_id. Only "snake" is allowed.' },
+        { error: 'Invalid game_id. Only "snake" and "flappy-wing" are allowed.' },
         { status: 400 }
       );
     }
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const supabase = getSupabaseClient();
 
     console.log('🔍 Supabase client initialized');
-    console.log('🔍 Querying scores table for game_id=snake');
+    console.log(`🔍 Querying scores table for game_id=${gameId}`);
 
     // First, let's check what's actually in the table (without filter)
     const { data: allData, error: allError } = await supabase
@@ -53,12 +53,12 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase
       .from('scores')
       .select('*')
-      .eq('game_id', 'snake')
+      .eq('game_id', gameId)
       .order('score', { ascending: false })
       .order('created_at', { ascending: true })
       .limit(10);
 
-    console.log('📊 Filtered query result (game_id=snake):', {
+    console.log(`📊 Filtered query result (game_id=${gameId}):`, {
       hasData: !!data,
       dataLength: data?.length || 0,
       data: data,
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     if ((!data || data.length === 0) && allData && allData.length > 0) {
       console.log('⚠️ Filtered query returned empty, trying client-side filter');
       const filtered = allData
-        .filter((row: any) => row.game_id === 'snake')
+        .filter((row: any) => row.game_id === gameId)
         .sort((a: any, b: any) => {
           if (b.score !== a.score) return b.score - a.score;
           return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();

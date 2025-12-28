@@ -290,10 +290,10 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
                 {showHowToPlay ? '✕ Close' : 'ℹ️ How to Play'}
               </button>
 
-              {/* Leaderboard Button - Only show for Snake game */}
-              {title === 'Snake' && (
+              {/* Leaderboard Button - Show for Snake and Flappy Wing games */}
+              {(title === 'Snake' || title === 'Flappy Wing') && (
                 <Link
-                  href="/snake/leaderboard"
+                  href={title === 'Snake' ? '/snake/leaderboard' : '/flappy-wing/leaderboard'}
                   style={{
                     textDecoration: 'none',
                   }}
