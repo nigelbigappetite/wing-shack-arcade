@@ -24,17 +24,19 @@ interface Pipe {
 
 // Physics constants (frame-rate independent, in px/s and px/s^2)
 const GRAVITY = 1800; // px/s^2
-const FLAP_VELOCITY = -420; // px/s (negative = upward) - tuned for micro-tap control
+const FLAP_VELOCITY = -350; // px/s (negative = upward) - reduced for micro-tap control (was -420)
 const MAX_FALL_SPEED = 1000; // px/s (positive = downward)
 const MAX_RISE_SPEED = -600; // px/s (negative = upward)
 
 // Game constants
 const PIPE_SPEED = 150; // px/s
 const PIPE_SPAWN_INTERVAL = 1600; // ms
-const PIPE_GAP = 140; // pixels
+const PIPE_GAP = 200; // pixels - increased to accommodate larger bird (was 140)
 const PIPE_WIDTH = 60;
 const BIRD_SIZE = 72; // Doubled from 36 for better visibility
 const BIRD_START_X = 100;
+const BIRD_HITBOX_RADIUS = BIRD_SIZE * 0.45; // Smaller hitbox for fairer collisions (45% of sprite size)
+const SHOW_COLLISION_DEBUG = false; // Set to true to visualize collision boxes
 
 // Assist curve constants (early game only)
 const ASSIST_SCORE_THRESHOLD = 10;
@@ -267,8 +269,8 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
 
   // Generate new pipe
   const generatePipe = useCallback((): Pipe => {
-    const minTopHeight = 80;
-    const maxTopHeight = gameHeightRef.current - PIPE_GAP - 80;
+    const minTopHeight = 100; // Increased minimum to ensure fair gaps
+    const maxTopHeight = gameHeightRef.current - PIPE_GAP - 100; // Increased margin
     const topHeight = Math.random() * (maxTopHeight - minTopHeight) + minTopHeight;
     
     return {
@@ -280,20 +282,34 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
     };
   }, []);
 
-  // Check collision
+  // Check collision using circle hitbox for bird
   const checkCollision = useCallback((birdX: number, birdY: number): boolean => {
-    // Ground/ceiling collision
-    if (birdY - BIRD_SIZE / 2 <= 0 || birdY + BIRD_SIZE / 2 >= gameHeightRef.current) {
+    // Ground/ceiling collision (using hitbox radius)
+    // Ground is at gameHeightRef.current - 40 (ground height), ceiling is at 0
+    const groundLevel = gameHeightRef.current - 40;
+    if (birdY - BIRD_HITBOX_RADIUS <= 0 || birdY + BIRD_HITBOX_RADIUS >= groundLevel) {
       return true;
     }
 
-    // Pipe collision
+    // Pipe collision - use circle-rectangle collision for fairer detection
     for (const pipe of pipesRef.current) {
-      if (
-        birdX + BIRD_SIZE / 2 > pipe.x &&
-        birdX - BIRD_SIZE / 2 < pipe.x + PIPE_WIDTH
-      ) {
-        if (birdY - BIRD_SIZE / 2 < pipe.topHeight || birdY + BIRD_SIZE / 2 > pipe.bottomY) {
+      // Check if bird circle overlaps with pipe rectangle
+      const pipeLeft = pipe.x;
+      const pipeRight = pipe.x + PIPE_WIDTH;
+      const pipeTopBottom = pipe.topHeight;
+      const pipeBottomTop = pipe.bottomY;
+
+      // Check if bird is horizontally overlapping with pipe
+      const horizontalOverlap = birdX + BIRD_HITBOX_RADIUS > pipeLeft && birdX - BIRD_HITBOX_RADIUS < pipeRight;
+      
+      if (horizontalOverlap) {
+        // Bird is horizontally aligned with pipe, check vertical collision
+        // Top pipe: bird hits if it's above the gap
+        if (birdY - BIRD_HITBOX_RADIUS < pipeTopBottom) {
+          return true;
+        }
+        // Bottom pipe: bird hits if it's below the gap
+        if (birdY + BIRD_HITBOX_RADIUS > pipeBottomTop) {
           return true;
         }
       }
@@ -471,6 +487,18 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
       // Bottom pipe
       ctx.fillRect(pipe.x, pipe.bottomY, PIPE_WIDTH, displayHeight - pipe.bottomY);
       ctx.strokeRect(pipe.x, pipe.bottomY, PIPE_WIDTH, displayHeight - pipe.bottomY);
+
+      // Debug: Draw collision boxes
+      if (SHOW_COLLISION_DEBUG) {
+        ctx.strokeStyle = '#FF0000'; // Red for collision boxes
+        ctx.lineWidth = 2;
+        // Top pipe collision box
+        ctx.strokeRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
+        // Bottom pipe collision box
+        ctx.strokeRect(pipe.x, pipe.bottomY, PIPE_WIDTH, displayHeight - pipe.bottomY);
+        ctx.strokeStyle = '#006400'; // Reset to dark green
+        ctx.lineWidth = 3;
+      }
     });
 
     // Draw bird
@@ -491,6 +519,15 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
       ctx.beginPath();
       ctx.arc(0, 0, BIRD_SIZE / 2, 0, Math.PI * 2);
       ctx.fill();
+      ctx.stroke();
+    }
+
+    // Debug: Draw bird hitbox
+    if (SHOW_COLLISION_DEBUG) {
+      ctx.strokeStyle = '#00FF00'; // Green for bird hitbox
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, BIRD_HITBOX_RADIUS, 0, Math.PI * 2);
       ctx.stroke();
     }
 
