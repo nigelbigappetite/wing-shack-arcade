@@ -237,11 +237,11 @@ export default function Home() {
                       <Image
                         src="/wingston flappybird.png"
                         alt="Flappy Wing"
-                        width={120}
-                        height={120}
+                        width={200}
+                        height={200}
                         style={{
-                          width: 'clamp(80px, 12vw, 120px)',
-                          height: 'clamp(80px, 12vw, 120px)',
+                          width: 'clamp(140px, 20vw, 200px)',
+                          height: 'clamp(140px, 20vw, 200px)',
                           objectFit: 'contain',
                           filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
                         }}

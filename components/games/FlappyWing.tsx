@@ -33,7 +33,7 @@ const PIPE_SPEED = 150; // px/s
 const PIPE_SPAWN_INTERVAL = 1600; // ms
 const PIPE_GAP = 140; // pixels
 const PIPE_WIDTH = 60;
-const BIRD_SIZE = 36; // Increased by 20% for better visibility (was 30)
+const BIRD_SIZE = 72; // Doubled from 36 for better visibility
 const BIRD_START_X = 100;
 
 // Assist curve constants (early game only)
