@@ -61,6 +61,8 @@ export default function FlappyWingPage() {
       }
 
       setSubmitSuccess(true);
+      // Refresh leaderboard after successful submission
+      // Note: Leaderboard page will auto-refresh on next visit
       // Clear game over state after a delay
       setTimeout(() => {
         setGameOverScore(null);

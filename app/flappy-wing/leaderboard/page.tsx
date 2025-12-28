@@ -46,11 +46,21 @@ export default function FlappyWingLeaderboardPage() {
       }
       
       // Handle both { data: [...] } and direct array responses
-      const leaderboardData = Array.isArray(data) ? data : (data.data || []);
+      // API returns { data: [...] } format
+      const leaderboardData = Array.isArray(data) ? data : (data.data || data.scores || []);
       console.log('✅ Parsed leaderboard data:', leaderboardData);
       console.log('✅ Leaderboard data length:', leaderboardData.length);
       
-      setLeaderboard(leaderboardData);
+      // Map to LeaderboardEntry format
+      const mappedData = leaderboardData.map((entry: any) => ({
+        id: entry.id,
+        game_id: entry.game_id || 'flappy-wing',
+        player_name: entry.player_name || 'Anonymous',
+        score: entry.score || 0,
+        created_at: entry.created_at,
+      }));
+      
+      setLeaderboard(mappedData);
     } catch (error: any) {
       console.error('❌ Leaderboard fetch error:', error);
       setLeaderboardError(error.message || 'Failed to load leaderboard');
