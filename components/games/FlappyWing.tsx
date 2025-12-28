@@ -63,6 +63,8 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
   const animationFrameRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
   const birdImageRef = useRef<HTMLImageElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioUnlockedRef = useRef<boolean>(false);
 
   // Bird state
   const birdYRef = useRef<number>(300); // Will be set properly when canvas is drawn
@@ -98,6 +100,57 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
     };
   }, []);
 
+  // Initialize audio context and unlock on user interaction
+  useEffect(() => {
+    // Create audio context
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        audioContextRef.current = new AudioContextClass();
+      }
+    } catch (error) {
+      console.warn('AudioContext not supported:', error);
+    }
+
+    // Unlock audio on first user interaction
+    const unlockAudio = async () => {
+      if (!audioUnlockedRef.current && audioContextRef.current) {
+        try {
+          // Resume audio context (required for mobile browsers)
+          if (audioContextRef.current.state === 'suspended') {
+            await audioContextRef.current.resume();
+          }
+          // Play a silent sound to unlock
+          const oscillator = audioContextRef.current.createOscillator();
+          const gainNode = audioContextRef.current.createGain();
+          gainNode.gain.value = 0;
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContextRef.current.destination);
+          oscillator.start();
+          oscillator.stop(audioContextRef.current.currentTime + 0.001);
+          audioUnlockedRef.current = true;
+        } catch (error) {
+          // Silent fail
+        }
+      }
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+    };
+
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {
+          // Ignore errors on close
+        });
+      }
+    };
+  }, []);
+
   // Reset game state
   const resetGame = useCallback(() => {
     // Reset bird to center of game area (will be set properly when canvas is drawn)
@@ -127,12 +180,26 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
   }, [gameState, resetGame]);
 
   // Play flap sound
-  const playFlapSound = useCallback(() => {
+  const playFlapSound = useCallback(async () => {
     if (!soundEnabled) return;
     
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      const audioContext = new AudioContext();
+      // Ensure we have an audio context
+      if (!audioContextRef.current) {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+          audioContextRef.current = new AudioContextClass();
+        } else {
+          return;
+        }
+      }
+
+      const audioContext = audioContextRef.current;
+
+      // Resume audio context if suspended (required for mobile browsers)
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
       
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
@@ -156,12 +223,26 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
   }, [soundEnabled]);
 
   // Play collision sound
-  const playCollisionSound = useCallback(() => {
+  const playCollisionSound = useCallback(async () => {
     if (!soundEnabled) return;
     
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      const audioContext = new AudioContext();
+      // Ensure we have an audio context
+      if (!audioContextRef.current) {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+          audioContextRef.current = new AudioContextClass();
+        } else {
+          return;
+        }
+      }
+
+      const audioContext = audioContextRef.current;
+
+      // Resume audio context if suspended (required for mobile browsers)
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
       
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
