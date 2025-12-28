@@ -35,7 +35,7 @@ const PIPE_GAP = 200; // pixels - increased to accommodate larger bird (was 140)
 const PIPE_WIDTH = 60;
 const BIRD_SIZE = 72; // Doubled from 36 for better visibility
 const BIRD_START_X = 100;
-const BIRD_HITBOX_RADIUS = BIRD_SIZE * 0.45; // Smaller hitbox for fairer collisions (45% of sprite size)
+const BIRD_HITBOX_RADIUS = BIRD_SIZE * 0.30; // Smaller hitbox for fairer collisions (30% of sprite size - reduced from 45%)
 const SHOW_COLLISION_DEBUG = false; // Set to true to visualize collision boxes
 
 // Assist curve constants (early game only)
@@ -92,7 +92,7 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
   // Load bird image
   useEffect(() => {
     const img = new Image();
-    img.src = '/wingston flappybird.png';
+    img.src = '/wingston2.png';
     img.onload = () => {
       birdImageRef.current = img;
       drawCanvas(); // Redraw when image loads
@@ -838,7 +838,7 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
               }}
             >
               <img
-                src="/wingston flappybird.png"
+                src="/wingston2.png"
                 alt="Flappy Wing"
                 style={{
                   width: 'clamp(64px, 10vw, 96px)',
