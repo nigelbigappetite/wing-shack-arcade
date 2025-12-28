@@ -193,7 +193,7 @@ export default function Home() {
                     boxSizing: 'border-box',
                   }}
                 >
-                  {/* Game Icon */}
+                  {/* Game Icon - Hero Container with Fixed Height */}
                   <motion.div
                     animate={{
                       scale: hoveredGame === game.id ? 1.15 : 1,
@@ -201,13 +201,14 @@ export default function Home() {
                     }}
                     transition={{ duration: 0.3 }}
                     style={{
-                      fontSize: 'clamp(100px, 15vw, 150px)',
-                      lineHeight: 1,
-                      filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
-                      marginTop: 'clamp(8px, 1.5vw, 16px)',
+                      height: 'clamp(120px, 18vw, 180px)', // Fixed height hero container
+                      minHeight: 'clamp(120px, 18vw, 180px)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      width: '100%',
+                      padding: 0, // No internal padding
+                      margin: 0, // No margins
                     }}
                   >
                     {game.icon === 'three-cup-logo' ? (
@@ -229,6 +230,7 @@ export default function Home() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
+                          height: '100%',
                         }}
                       >
                         🧠
@@ -236,18 +238,19 @@ export default function Home() {
                     ) : game.icon === 'flappy-wing-image' ? (
                       <div
                         style={{
-                          width: 'clamp(100px, 15vw, 150px)',
-                          height: 'clamp(100px, 15vw, 150px)',
+                          width: 'clamp(140px, 20vw, 200px)', // Larger container for Flappy Wing
+                          height: '100%', // Fill hero container height
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
+                          padding: 0, // No internal padding
                         }}
                       >
                         <Image
                           src="/wingston flappybird.png"
                           alt="Flappy Wing"
-                          width={150}
-                          height={150}
+                          width={200}
+                          height={200}
                           style={{
                             width: '100%',
                             height: '100%',
@@ -257,7 +260,19 @@ export default function Home() {
                         />
                       </div>
                     ) : (
-                      game.icon
+                      <div
+                        style={{
+                          fontSize: 'clamp(100px, 15vw, 150px)',
+                          lineHeight: 1,
+                          filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: '100%',
+                        }}
+                      >
+                        {game.icon}
+                      </div>
                     )}
                   </motion.div>
 
