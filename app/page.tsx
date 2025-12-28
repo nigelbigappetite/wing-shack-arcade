@@ -247,7 +247,7 @@ export default function Home() {
                         }}
                       >
                         <Image
-                          src="/wingston flappybird.png"
+                          src="/wingston2.png"
                           alt="Flappy Wing"
                           width={200}
                           height={200}
