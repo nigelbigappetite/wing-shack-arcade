@@ -118,7 +118,7 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
   // Load background image
   useEffect(() => {
     const img = new Image();
-    img.src = '/flappywingbackground.png';
+    img.src = '/flappy wing background.png';
     img.onload = () => {
       backgroundImageRef.current = img;
       backgroundLoadedRef.current = true;
