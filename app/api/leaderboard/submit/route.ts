@@ -124,9 +124,9 @@ export async function POST(request: NextRequest) {
     const { game_id, player_name, score } = body;
 
     // Validate game_id
-    if (game_id !== 'snake') {
+    if (game_id !== 'snake' && game_id !== 'flappy-wing') {
       return NextResponse.json(
-        { error: 'Invalid game_id. Only "snake" is allowed.' },
+        { error: 'Invalid game_id. Only "snake" and "flappy-wing" are allowed.' },
         { status: 400 }
       );
     }
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase
       .from('scores')
       .insert({
-        game_id: 'snake',
+        game_id: game_id,
         player_name: player_name.trim(),
         score: score,
       } as any)
