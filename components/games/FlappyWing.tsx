@@ -22,10 +22,14 @@ interface Pipe {
   passed: boolean;
 }
 
-const GRAVITY = 0.4;
-const FLAP_IMPULSE = -7;
-const MAX_VELOCITY = 9;
-const PIPE_SPEED = 2.5;
+// Physics constants (frame-rate independent, in px/s and px/s^2)
+const GRAVITY = 1800; // px/s^2
+const FLAP_VELOCITY = -450; // px/s (negative = upward)
+const MAX_FALL_SPEED = 1000; // px/s (positive = downward)
+const MAX_RISE_SPEED = -600; // px/s (negative = upward)
+
+// Game constants
+const PIPE_SPEED = 150; // px/s
 const PIPE_SPAWN_INTERVAL = 1600; // ms
 const PIPE_GAP = 140; // pixels
 const PIPE_WIDTH = 60;
@@ -38,10 +42,13 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
   const [score, setScore] = useState(0);
   const [bestScore, setBestScore] = useState(0);
   const [screenShake, setScreenShake] = useState(0);
+  const [showDebug, setShowDebug] = useState(false);
+  const [debugInfo, setDebugInfo] = useState({ y: 0, velY: 0 });
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
+  const birdImageRef = useRef<HTMLImageElement | null>(null);
 
   // Bird state
   const birdYRef = useRef<number>(300); // Will be set properly when canvas is drawn
@@ -62,6 +69,19 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
     if (saved) {
       setBestScore(parseInt(saved, 10));
     }
+  }, []);
+
+  // Load bird image
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/wingston flappybird.png';
+    img.onload = () => {
+      birdImageRef.current = img;
+      drawCanvas(); // Redraw when image loads
+    };
+    img.onerror = () => {
+      console.warn('Failed to load bird image');
+    };
   }, []);
 
   // Reset game state
@@ -86,7 +106,8 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
     }
 
     if (gameState === 'running') {
-      birdVelocityRef.current = FLAP_IMPULSE;
+      // SET velocity on flap (do not add)
+      birdVelocityRef.current = FLAP_VELOCITY;
       playFlapSound();
     }
   }, [gameState, resetGame]);
@@ -196,19 +217,35 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
       return;
     }
 
-    const deltaTime = Math.min(timestamp - lastFrameTimeRef.current, 50); // Cap delta to prevent large jumps
+    // Calculate delta time in SECONDS
+    let dt = (timestamp - lastFrameTimeRef.current) / 1000;
     lastFrameTimeRef.current = timestamp;
 
-    // Normalize to 60fps for consistent gameplay
-    const normalizedDelta = deltaTime / 16.67;
+    // Clamp dt to avoid lag spikes (max 30fps equivalent)
+    dt = Math.min(dt, 0.033);
 
-    // Update bird physics
-    birdVelocityRef.current += GRAVITY * normalizedDelta;
-    birdVelocityRef.current = Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, birdVelocityRef.current));
-    birdYRef.current += birdVelocityRef.current * normalizedDelta;
+    // Update bird physics (frame-rate independent)
+    // Apply gravity: velY += gravity * dt
+    birdVelocityRef.current += GRAVITY * dt;
+    
+    // Clamp velocity
+    birdVelocityRef.current = Math.max(MAX_RISE_SPEED, Math.min(MAX_FALL_SPEED, birdVelocityRef.current));
+    
+    // Update position: y += velY * dt
+    birdYRef.current += birdVelocityRef.current * dt;
 
-    // Update bird rotation based on velocity
-    birdRotationRef.current = Math.max(-30, Math.min(30, birdVelocityRef.current * 3));
+    // Update debug info (only if debug is enabled to avoid unnecessary state updates)
+    if (showDebug) {
+      setDebugInfo({
+        y: Math.round(birdYRef.current),
+        velY: Math.round(birdVelocityRef.current),
+      });
+    }
+
+    // Update bird rotation based on velocity (visual feedback)
+    // Map velocity range to rotation range (-30 to 30 degrees)
+    const velocityRatio = birdVelocityRef.current / MAX_FALL_SPEED;
+    birdRotationRef.current = Math.max(-30, Math.min(30, velocityRatio * 30));
 
     // Spawn pipes
     if (timestamp - lastPipeSpawnRef.current > PIPE_SPAWN_INTERVAL) {
@@ -216,10 +253,10 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
       lastPipeSpawnRef.current = timestamp;
     }
 
-    // Update pipes
+    // Update pipes (frame-rate independent)
     pipesRef.current = pipesRef.current.map((pipe) => ({
       ...pipe,
-      x: pipe.x - PIPE_SPEED * normalizedDelta,
+      x: pipe.x - PIPE_SPEED * dt,
     }));
 
     // Remove off-screen pipes
@@ -319,20 +356,21 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
     ctx.translate(BIRD_START_X, birdYRef.current);
     ctx.rotate((birdRotationRef.current * Math.PI) / 180);
 
-    // Bird body (circle)
-    ctx.fillStyle = '#FFD700'; // Gold
-    ctx.strokeStyle = '#FFA500'; // Orange
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(0, 0, BIRD_SIZE / 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    // Bird emoji overlay (optional, for better visibility)
-    ctx.font = `${BIRD_SIZE * 0.8}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🍗', 0, 0);
+    if (birdImageRef.current) {
+      // Draw bird image
+      const img = birdImageRef.current;
+      const size = BIRD_SIZE;
+      ctx.drawImage(img, -size / 2, -size / 2, size, size);
+    } else {
+      // Fallback: draw circle while image loads
+      ctx.fillStyle = '#FFD700'; // Gold
+      ctx.strokeStyle = '#FFA500'; // Orange
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, BIRD_SIZE / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
 
     ctx.restore();
   }, []);
@@ -377,6 +415,10 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
       if (e.key === ' ' || e.key === 'Spacebar') {
         e.preventDefault();
         flap();
+      }
+      // Toggle debug with 'D' key
+      if (e.key === 'd' || e.key === 'D') {
+        setShowDebug((prev) => !prev);
       }
     };
 
@@ -452,22 +494,52 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
               left: '50%',
               transform: 'translateX(-50%)',
               zIndex: 20,
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              padding: 'clamp(4px, 1vw, 8px) clamp(10px, 1.5vw, 14px)',
-              borderRadius: wingShackTheme.borderRadius.md,
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'clamp(4px, 1vw, 8px)',
+              alignItems: 'center',
             }}
           >
             <div
               style={{
-                fontFamily: wingShackTheme.typography.fontFamily.display,
-                fontSize: 'clamp(16px, 3vw, 24px)',
-                fontWeight: wingShackTheme.typography.fontWeight.bold,
-                color: wingShackTheme.colors.primary,
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                padding: 'clamp(4px, 1vw, 8px) clamp(10px, 1.5vw, 14px)',
+                borderRadius: wingShackTheme.borderRadius.md,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               }}
             >
-              {score}
+              <div
+                style={{
+                  fontFamily: wingShackTheme.typography.fontFamily.display,
+                  fontSize: 'clamp(16px, 3vw, 24px)',
+                  fontWeight: wingShackTheme.typography.fontWeight.bold,
+                  color: wingShackTheme.colors.primary,
+                }}
+              >
+                {score}
+              </div>
             </div>
+            {/* Debug Display */}
+            {showDebug && (
+              <div
+                style={{
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  color: '#ffffff',
+                  padding: 'clamp(6px, 1.2vw, 10px) clamp(10px, 1.5vw, 14px)',
+                  borderRadius: wingShackTheme.borderRadius.md,
+                  fontFamily: 'monospace',
+                  fontSize: 'clamp(10px, 1.5vw, 12px)',
+                  lineHeight: 1.4,
+                  maxWidth: '200px',
+                }}
+              >
+                <div>y: {debugInfo.y}</div>
+                <div>velY: {debugInfo.velY} px/s</div>
+                <div>gravity: {GRAVITY} px/s²</div>
+                <div>flapVel: {FLAP_VELOCITY} px/s</div>
+                <div>gap: {PIPE_GAP}px</div>
+              </div>
+            )}
           </div>
         )}
 
@@ -600,11 +672,21 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
           >
             <div
               style={{
-                fontSize: 'clamp(64px, 10vw, 96px)',
                 marginBottom: 'clamp(8px, 1.5vw, 16px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              🐦
+              <img
+                src="/wingston flappybird.png"
+                alt="Flappy Wing"
+                style={{
+                  width: 'clamp(64px, 10vw, 96px)',
+                  height: 'clamp(64px, 10vw, 96px)',
+                  objectFit: 'contain',
+                }}
+              />
             </div>
             <div
               style={{

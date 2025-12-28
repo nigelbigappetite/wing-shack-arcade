@@ -62,7 +62,7 @@ const games: Game[] = [
     description: 'TAP TO FLY. DON\'T CLIP THE PIPES.',
     href: '/flappy-wing',
     color: '#FF8C00',
-    icon: '🐦',
+    icon: 'flappy-wing-image',
     category: 'Arcade',
   },
 ];
@@ -233,6 +233,19 @@ export default function Home() {
                       >
                         🧠
                       </motion.div>
+                    ) : game.icon === 'flappy-wing-image' ? (
+                      <Image
+                        src="/wingston flappybird.png"
+                        alt="Flappy Wing"
+                        width={120}
+                        height={120}
+                        style={{
+                          width: 'clamp(80px, 12vw, 120px)',
+                          height: 'clamp(80px, 12vw, 120px)',
+                          objectFit: 'contain',
+                          filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
+                        }}
+                      />
                     ) : (
                       game.icon
                     )}
