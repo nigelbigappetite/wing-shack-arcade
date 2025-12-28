@@ -26,7 +26,10 @@ const AI_PADDLE_SPEED = 250; // px/s - AI paddle max speed (slightly slower for 
 const AI_REACTION_DELAY = 150; // ms - AI reaction lag
 const WIN_SCORE = 7; // First to 7 wins
 const COURT_MARGIN = 20; // pixels - margin from edges
-const ROUND_RESET_DELAY = 600; // ms - pause between rounds
+const COUNTDOWN_DURATION = 1000; // ms - 1 second per countdown number (3 seconds total)
+const TRACKPAD_BUTTON_SIZE = 64; // px - minimum 56px, prefer 64px
+const TRACKPAD_BUTTON_SPACING = 16; // px - spacing between buttons
+const TRACKPAD_TAP_NUDGE = 24; // px - distance paddle moves on tap
 
 const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
   const { soundEnabled } = useGameShellContext();
@@ -34,6 +37,10 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
   const [playerScore, setPlayerScore] = useState(0);
   const [aiScore, setAiScore] = useState(0);
   const [roundCountdown, setRoundCountdown] = useState<number | null>(null);
+  const [controlMode, setControlMode] = useState<'touch' | 'trackpad'>('touch');
+  const [muteSound, setMuteSound] = useState(false);
+  const [trackpadUpPressed, setTrackpadUpPressed] = useState(false);
+  const [trackpadDownPressed, setTrackpadDownPressed] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -57,8 +64,55 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
   const ballSpeedRef = useRef<number>(BALL_SPEED_BASE);
 
   // Input state
-  const touchYRef = useRef<number | null>(null);
-  const isDraggingRef = useRef<boolean>(false);
+  const targetYRef = useRef<number | null>(null); // Target Y for tap-to-position
+  const trackpadUpPressedRef = useRef<boolean>(false);
+  const trackpadDownPressedRef = useRef<boolean>(false);
+  
+  // Audio
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioUnlockedRef = useRef<boolean>(false);
+  const pointWinAudioRef = useRef<HTMLAudioElement | null>(null);
+  const pointLossAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Unlock audio on first interaction
+  const unlockAudio = useCallback(() => {
+    if (audioUnlockedRef.current) return;
+    
+    try {
+      // Create AudioContext
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      audioContextRef.current = new AudioContextClass();
+      
+      // Create audio elements
+      pointWinAudioRef.current = new Audio('/small_crowd_applause-yannick_lemieux-1268806408.mp3');
+      pointLossAudioRef.current = new Audio('/john fuming.mp3');
+      
+      // Preload
+      pointWinAudioRef.current.load();
+      pointLossAudioRef.current.load();
+      
+      audioUnlockedRef.current = true;
+    } catch (error) {
+      console.warn('Failed to initialize audio:', error);
+    }
+  }, []);
+
+  // Play sound effect
+  const playSound = useCallback((sound: 'win' | 'loss') => {
+    if (muteSound || !soundEnabled || !audioUnlockedRef.current) return;
+    
+    try {
+      const audio = sound === 'win' ? pointWinAudioRef.current : pointLossAudioRef.current;
+      if (audio) {
+        audio.currentTime = 0; // Restart from beginning
+        audio.play().catch((err) => {
+          console.warn('Failed to play sound:', err);
+        });
+      }
+    } catch (error) {
+      console.warn('Error playing sound:', error);
+    }
+  }, [muteSound, soundEnabled]);
 
   // Reset game
   const resetGame = useCallback(() => {
@@ -66,6 +120,11 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
     aiPaddleYRef.current = gameHeightRef.current / 2;
     aiTargetYRef.current = gameHeightRef.current / 2;
     aiReactionTimerRef.current = 0;
+    targetYRef.current = null;
+    trackpadUpPressedRef.current = false;
+    trackpadDownPressedRef.current = false;
+    setTrackpadUpPressed(false);
+    setTrackpadDownPressed(false);
     setPlayerScore(0);
     setAiScore(0);
     ballSpeedRef.current = BALL_SPEED_BASE;
@@ -82,9 +141,9 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
     ballVelYRef.current = (Math.random() - 0.5) * 100; // Random Y velocity
   }, []);
 
-  // Handle touch/mouse input
+  // Handle touch/mouse input (tap-to-position)
   const handleInput = useCallback((clientX: number, clientY: number) => {
-    if (gameState !== 'running') return;
+    if (gameState !== 'running' || controlMode !== 'touch') return;
     
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -94,37 +153,81 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
     
     // Only respond to input in left half of canvas
     if (canvasX < gameWidthRef.current / 2) {
-      touchYRef.current = canvasY;
-      isDraggingRef.current = true;
+      // Set target Y (paddle will smoothly move toward this)
+      targetYRef.current = Math.max(
+        PADDLE_HEIGHT / 2 + COURT_MARGIN,
+        Math.min(
+          gameHeightRef.current - PADDLE_HEIGHT / 2 - COURT_MARGIN,
+          canvasY
+        )
+      );
     }
-  }, [gameState]);
+  }, [gameState, controlMode]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     e.preventDefault();
-    if (e.touches.length > 0) {
+    unlockAudio(); // Unlock audio on first touch
+    if (e.touches.length > 0 && controlMode === 'touch') {
       const touch = e.touches[0];
       handleInput(touch.clientX, touch.clientY);
     }
-  }, [handleInput]);
+  }, [handleInput, controlMode, unlockAudio]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     e.preventDefault();
-    if (e.touches.length > 0 && isDraggingRef.current) {
+    if (e.touches.length > 0 && controlMode === 'touch') {
       const touch = e.touches[0];
       handleInput(touch.clientX, touch.clientY);
     }
-  }, [handleInput]);
+  }, [handleInput, controlMode]);
 
   const handleTouchEnd = useCallback(() => {
-    isDraggingRef.current = false;
-    touchYRef.current = null;
+    // Keep targetY - don't clear it, so paddle continues moving to last position
+    // This enables tap-to-position without holding
   }, []);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (e.buttons > 0) {
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    unlockAudio(); // Unlock audio on first click
+    if (controlMode === 'touch') {
       handleInput(e.clientX, e.clientY);
     }
-  }, [handleInput]);
+  }, [handleInput, controlMode, unlockAudio]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (e.buttons > 0 && controlMode === 'touch') {
+      handleInput(e.clientX, e.clientY);
+    }
+  }, [handleInput, controlMode]);
+
+  // Trackpad controls
+  const handleTrackpadUp = useCallback((isPressed: boolean) => {
+    if (gameState !== 'running' || controlMode !== 'trackpad') return;
+    trackpadUpPressedRef.current = isPressed;
+    setTrackpadUpPressed(isPressed);
+    unlockAudio();
+  }, [gameState, controlMode, unlockAudio]);
+
+  const handleTrackpadDown = useCallback((isPressed: boolean) => {
+    if (gameState !== 'running' || controlMode !== 'trackpad') return;
+    trackpadDownPressedRef.current = isPressed;
+    setTrackpadDownPressed(isPressed);
+    unlockAudio();
+  }, [gameState, controlMode, unlockAudio]);
+
+  const handleTrackpadTap = useCallback((direction: 'up' | 'down') => {
+    if (gameState !== 'running' || controlMode !== 'trackpad') return;
+    unlockAudio();
+    
+    const nudge = direction === 'up' ? -TRACKPAD_TAP_NUDGE : TRACKPAD_TAP_NUDGE;
+    const newY = Math.max(
+      PADDLE_HEIGHT / 2 + COURT_MARGIN,
+      Math.min(
+        gameHeightRef.current - PADDLE_HEIGHT / 2 - COURT_MARGIN,
+        playerPaddleYRef.current + nudge
+      )
+    );
+    targetYRef.current = newY;
+  }, [gameState, controlMode, unlockAudio]);
 
   // Game loop
   const gameLoop = useCallback((timestamp: number) => {
@@ -139,18 +242,40 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
       : Math.min((timestamp - lastFrameTimeRef.current) / 1000, 0.033);
     lastFrameTimeRef.current = timestamp;
 
-    // Update player paddle (follow touch/mouse)
-    if (touchYRef.current !== null && isDraggingRef.current) {
-      const targetY = Math.max(
-        PADDLE_HEIGHT / 2 + COURT_MARGIN,
-        Math.min(
-          gameHeightRef.current - PADDLE_HEIGHT / 2 - COURT_MARGIN,
-          touchYRef.current
-        )
-      );
-      const dy = targetY - playerPaddleYRef.current;
-      const maxMove = PADDLE_SPEED * dt;
-      playerPaddleYRef.current += Math.max(-maxMove, Math.min(maxMove, dy));
+    // Update player paddle
+    if (controlMode === 'touch') {
+      // Tap-to-position: smoothly move toward targetY
+      if (targetYRef.current !== null) {
+        const dy = targetYRef.current - playerPaddleYRef.current;
+        const maxMove = PADDLE_SPEED * dt;
+        playerPaddleYRef.current += Math.max(-maxMove, Math.min(maxMove, dy));
+      }
+    } else if (controlMode === 'trackpad') {
+      // Trackpad: move based on button presses
+      let moveDirection = 0;
+      if (trackpadUpPressedRef.current) {
+        moveDirection = -1;
+      } else if (trackpadDownPressedRef.current) {
+        moveDirection = 1;
+      }
+      
+      if (moveDirection !== 0) {
+        const moveAmount = PADDLE_SPEED * dt * moveDirection;
+        const newY = Math.max(
+          PADDLE_HEIGHT / 2 + COURT_MARGIN,
+          Math.min(
+            gameHeightRef.current - PADDLE_HEIGHT / 2 - COURT_MARGIN,
+            playerPaddleYRef.current + moveAmount
+          )
+        );
+        playerPaddleYRef.current = newY;
+        targetYRef.current = newY; // Update target for smooth transitions
+      } else if (targetYRef.current !== null) {
+        // Smooth to target after tap
+        const dy = targetYRef.current - playerPaddleYRef.current;
+        const maxMove = PADDLE_SPEED * dt;
+        playerPaddleYRef.current += Math.max(-maxMove, Math.min(maxMove, dy));
+      }
     }
 
     // Update AI paddle (with reaction delay)
@@ -235,7 +360,8 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
 
     // Scoring
     if (ballXRef.current < 0) {
-      // AI scores
+      // AI scores (player loses point)
+      playSound('loss');
       const newAiScore = aiScore + 1;
       setAiScore(newAiScore);
       if (newAiScore >= WIN_SCORE) {
@@ -244,23 +370,11 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
       } else {
         setGameState('roundReset');
         setRoundCountdown(3);
-        // Countdown sequence
-        const countdownInterval = setInterval(() => {
-          setRoundCountdown((prev) => {
-            if (prev === null || prev <= 1) {
-              clearInterval(countdownInterval);
-              setRoundCountdown(null);
-              resetBall();
-              setGameState('running');
-              return null;
-            }
-            return prev - 1;
-          });
-        }, ROUND_RESET_DELAY / 3);
       }
       onScore?.(playerScore, newAiScore);
     } else if (ballXRef.current > gameWidthRef.current) {
-      // Player scores
+      // Player scores (player wins point)
+      playSound('win');
       const newPlayerScore = playerScore + 1;
       setPlayerScore(newPlayerScore);
       if (newPlayerScore >= WIN_SCORE) {
@@ -269,19 +383,6 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
       } else {
         setGameState('roundReset');
         setRoundCountdown(3);
-        // Countdown sequence
-        const countdownInterval = setInterval(() => {
-          setRoundCountdown((prev) => {
-            if (prev === null || prev <= 1) {
-              clearInterval(countdownInterval);
-              setRoundCountdown(null);
-              resetBall();
-              setGameState('running');
-              return null;
-            }
-            return prev - 1;
-          });
-        }, ROUND_RESET_DELAY / 3);
       }
       onScore?.(newPlayerScore, aiScore);
     }
@@ -290,7 +391,7 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
     drawCanvas();
 
     animationFrameRef.current = requestAnimationFrame(gameLoop);
-  }, [gameState, playerScore, aiScore, onScore, onGameOver, resetBall]);
+  }, [gameState, playerScore, aiScore, controlMode, onScore, onGameOver, resetBall, playSound]);
 
   // Draw canvas
   const drawCanvas = useCallback(() => {
@@ -413,7 +514,7 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, [drawCanvas]);
 
-  // Handle round reset countdown
+  // Handle round reset countdown (exactly 3 seconds: 3 -> 2 -> 1 -> play)
   useEffect(() => {
     if (gameState === 'roundReset' && roundCountdown !== null) {
       if (roundCountdown <= 0) {
@@ -421,11 +522,20 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
         resetBall();
         setGameState('running');
       } else {
+        // Each countdown number lasts exactly 1 second
         const timer = setTimeout(() => {
-          setRoundCountdown(roundCountdown - 1);
-        }, ROUND_RESET_DELAY / 3);
+          setRoundCountdown((prev) => {
+            if (prev === null || prev <= 1) {
+              return null;
+            }
+            return prev - 1;
+          });
+        }, COUNTDOWN_DURATION);
         return () => clearTimeout(timer);
       }
+    } else {
+      // Clear countdown if game state changes
+      setRoundCountdown(null);
     }
   }, [gameState, roundCountdown, resetBall]);
 
@@ -485,31 +595,196 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
         style={{
           width: '100%',
           height: '100%',
+          minHeight: 'clamp(400px, 60vh, 600px)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'flex-start',
           position: 'relative',
+          overflow: 'hidden', // Prevent scrolling
+          paddingTop: 'clamp(8px, 1.5vw, 12px)',
         }}
         data-game-lifecycle="true"
       >
+        {/* Control Mode Toggle & Mute Button */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 'clamp(8px, 1.5vw, 12px)',
+            right: 'clamp(8px, 1.5vw, 12px)',
+            display: 'flex',
+            gap: 'clamp(8px, 1.5vw, 12px)',
+            zIndex: 10,
+          }}
+        >
+          {/* Mute Toggle */}
+          <motion.button
+            onClick={() => setMuteSound(!muteSound)}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            style={{
+              width: 'clamp(36px, 5vw, 44px)',
+              height: 'clamp(36px, 5vw, 44px)',
+              borderRadius: '50%',
+              border: 'none',
+              backgroundColor: muteSound ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.8)',
+              color: muteSound ? '#ffffff' : '#000000',
+              fontSize: 'clamp(18px, 2.5vw, 22px)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            {muteSound ? '🔇' : '🔊'}
+          </motion.button>
+
+          {/* Control Mode Toggle */}
+          <motion.button
+            onClick={() => setControlMode(controlMode === 'touch' ? 'trackpad' : 'touch')}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{
+              padding: 'clamp(6px, 1vw, 8px) clamp(12px, 2vw, 16px)',
+              borderRadius: wingShackTheme.borderRadius.md,
+              border: 'none',
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              color: '#000000',
+              fontFamily: wingShackTheme.typography.fontFamily.body,
+              fontSize: 'clamp(11px, 1.5vw, 13px)',
+              fontWeight: wingShackTheme.typography.fontWeight.semibold,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {controlMode === 'touch' ? '👆 Touch' : '🎮 Trackpad'}
+          </motion.button>
+        </div>
+
         {/* Canvas */}
         <canvas
           ref={canvasRef}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           style={{
             width: '100%',
             maxWidth: 'clamp(320px, 90vw, 600px)',
-            aspectRatio: '3/4',
+            maxHeight: controlMode === 'trackpad' ? 'calc(100vh - clamp(200px, 25vh, 250px))' : 'calc(100vh - clamp(40px, 5vh, 60px))',
+            aspectRatio: controlMode === 'trackpad' ? undefined : '3/4',
             display: 'block',
             borderRadius: wingShackTheme.borderRadius.md,
             border: `2px solid ${wingShackTheme.colors.primary}40`,
             touchAction: 'none', // Prevent scrolling
+            flexShrink: 0,
           }}
         />
+
+        {/* Trackpad Controls */}
+        {controlMode === 'trackpad' && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: `${TRACKPAD_BUTTON_SPACING}px`,
+              marginTop: 'clamp(12px, 2vw, 16px)',
+              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+              width: '100%',
+              maxWidth: 'clamp(320px, 90vw, 600px)',
+            }}
+          >
+            {/* Up Button */}
+            <motion.button
+              onPointerDown={(e) => {
+                e.preventDefault();
+                handleTrackpadUp(true);
+              }}
+              onPointerUp={(e) => {
+                e.preventDefault();
+                handleTrackpadUp(false);
+              }}
+              onPointerCancel={(e) => {
+                e.preventDefault();
+                handleTrackpadUp(false);
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                handleTrackpadTap('up');
+              }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{
+                width: `clamp(${TRACKPAD_BUTTON_SIZE}px, 15vw, 80px)`,
+                height: `clamp(${TRACKPAD_BUTTON_SIZE}px, 15vw, 80px)`,
+                minWidth: `${TRACKPAD_BUTTON_SIZE}px`,
+                minHeight: `${TRACKPAD_BUTTON_SIZE}px`,
+                borderRadius: wingShackTheme.borderRadius.lg,
+                border: 'none',
+                backgroundColor: trackpadUpPressed ? wingShackTheme.colors.primary : 'rgba(255, 255, 255, 0.9)',
+                color: trackpadUpPressed ? '#ffffff' : wingShackTheme.colors.primary,
+                fontSize: 'clamp(32px, 6vw, 48px)',
+                fontWeight: wingShackTheme.typography.fontWeight.bold,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                touchAction: 'none',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              ▲
+            </motion.button>
+
+            {/* Down Button */}
+            <motion.button
+              onPointerDown={(e) => {
+                e.preventDefault();
+                handleTrackpadDown(true);
+              }}
+              onPointerUp={(e) => {
+                e.preventDefault();
+                handleTrackpadDown(false);
+              }}
+              onPointerCancel={(e) => {
+                e.preventDefault();
+                handleTrackpadDown(false);
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                handleTrackpadTap('down');
+              }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{
+                width: `clamp(${TRACKPAD_BUTTON_SIZE}px, 15vw, 80px)`,
+                height: `clamp(${TRACKPAD_BUTTON_SIZE}px, 15vw, 80px)`,
+                minWidth: `${TRACKPAD_BUTTON_SIZE}px`,
+                minHeight: `${TRACKPAD_BUTTON_SIZE}px`,
+                borderRadius: wingShackTheme.borderRadius.lg,
+                border: 'none',
+                backgroundColor: trackpadDownPressed ? wingShackTheme.colors.primary : 'rgba(255, 255, 255, 0.9)',
+                color: trackpadDownPressed ? '#ffffff' : wingShackTheme.colors.primary,
+                fontSize: 'clamp(32px, 6vw, 48px)',
+                fontWeight: wingShackTheme.typography.fontWeight.bold,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                touchAction: 'none',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              ▼
+            </motion.button>
+          </div>
+        )}
 
         {/* Idle overlay */}
         {gameState === 'idle' && (
