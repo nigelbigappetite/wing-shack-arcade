@@ -160,7 +160,12 @@ export async function GET(request: NextRequest) {
       hasError: false
     };
     
-    return NextResponse.json(response);
+    // Add cache-busting headers to ensure fresh data
+    const responseObj = NextResponse.json(response);
+    responseObj.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    responseObj.headers.set('Pragma', 'no-cache');
+    responseObj.headers.set('Expires', '0');
+    return responseObj;
   } catch (error: any) {
     console.error('Leaderboard GET error:', error);
     return NextResponse.json(

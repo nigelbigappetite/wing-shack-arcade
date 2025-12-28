@@ -25,8 +25,12 @@ export default function FlappyWingLeaderboardPage() {
     setLeaderboardLoading(true);
     setLeaderboardError(null);
     try {
+      // Add timestamp to prevent caching
+      const timestamp = Date.now();
       console.log('🔍 Fetching leaderboard from /api/leaderboard?game_id=flappy-wing');
-      const response = await fetch('/api/leaderboard?game_id=flappy-wing');
+      const response = await fetch(`/api/leaderboard?game_id=flappy-wing&_t=${timestamp}`, {
+        cache: 'no-store',
+      });
       
       console.log('📡 Response status:', response.status, response.statusText);
       
@@ -69,9 +73,30 @@ export default function FlappyWingLeaderboardPage() {
     }
   }, []);
 
-  // Fetch on mount
+  // Fetch on mount and when page becomes visible
   useEffect(() => {
     fetchLeaderboard();
+    
+    // Refresh when page becomes visible (user navigates back)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchLeaderboard();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Also refresh on focus (user switches back to tab)
+    const handleFocus = () => {
+      fetchLeaderboard();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [fetchLeaderboard]);
 
   return (
@@ -175,18 +200,51 @@ export default function FlappyWingLeaderboardPage() {
           🐦 FLAPPY WING LEADERBOARD
         </h1>
 
-        <h2
+        <div
           style={{
-            fontFamily: wingShackTheme.typography.fontFamily.display,
-            fontSize: 'clamp(18px, 3vw, 24px)',
-            fontWeight: wingShackTheme.typography.fontWeight.bold,
-            color: wingShackTheme.colors.textSecondary,
-            margin: '0 0 clamp(24px, 4vw, 32px) 0',
-            textAlign: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 'clamp(24px, 4vw, 32px)',
+            gap: 'clamp(12px, 2vw, 16px)',
           }}
         >
-          TOP 10 SCORES
-        </h2>
+          <h2
+            style={{
+              fontFamily: wingShackTheme.typography.fontFamily.display,
+              fontSize: 'clamp(18px, 3vw, 24px)',
+              fontWeight: wingShackTheme.typography.fontWeight.bold,
+              color: wingShackTheme.colors.textSecondary,
+              margin: 0,
+              textAlign: 'center',
+              flex: 1,
+            }}
+          >
+            TOP 10 SCORES
+          </h2>
+          <motion.button
+            onClick={fetchLeaderboard}
+            disabled={leaderboardLoading}
+            whileHover={leaderboardLoading ? {} : { scale: 1.05 }}
+            whileTap={leaderboardLoading ? {} : { scale: 0.95 }}
+            style={{
+              padding: 'clamp(6px, 1vw, 8px) clamp(12px, 2vw, 16px)',
+              backgroundColor: leaderboardLoading ? wingShackTheme.colors.textMuted : wingShackTheme.colors.primary,
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: wingShackTheme.borderRadius.md,
+              fontFamily: wingShackTheme.typography.fontFamily.body,
+              fontSize: 'clamp(12px, 1.8vw, 14px)',
+              fontWeight: wingShackTheme.typography.fontWeight.semibold,
+              cursor: leaderboardLoading ? 'not-allowed' : 'pointer',
+              boxShadow: `0 2px 8px ${wingShackTheme.colors.primary}40`,
+              whiteSpace: 'nowrap',
+              opacity: leaderboardLoading ? 0.6 : 1,
+            }}
+          >
+            {leaderboardLoading ? '⏳' : '🔄'} Refresh
+          </motion.button>
+        </div>
 
         {leaderboardLoading ? (
           <div
