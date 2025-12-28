@@ -56,6 +56,15 @@ const games: Game[] = [
     icon: '🐍',
     category: 'Arcade',
   },
+  {
+    id: 'flappy-wing',
+    title: 'FLAPPY WING',
+    description: 'TAP TO FLY. DON\'T CLIP THE PIPES.',
+    href: '/flappy-wing',
+    color: '#FF8C00',
+    icon: '🍗',
+    category: 'Arcade',
+  },
 ];
 
 export default function Home() {

@@ -37,6 +37,7 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
   const [bestScore, setBestScore] = useState(0);
   const [speed, setSpeed] = useState(INITIAL_SPEED);
   const [wingsEaten, setWingsEaten] = useState(0);
+  const [isNewHighScore, setIsNewHighScore] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -44,6 +45,8 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
   const directionRef = useRef<Direction>('right');
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioUnlockedRef = useRef<boolean>(false);
 
   // Initialize snake in center
   const initializeSnake = useCallback(() => {
@@ -147,6 +150,9 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
         if (newScore > bestScore) {
           setBestScore(newScore);
           localStorage.setItem('snake-best-score', newScore.toString());
+          setIsNewHighScore(true);
+          // Reset animation flag after animation completes
+          setTimeout(() => setIsNewHighScore(false), 1500);
         }
 
         // Increase speed every 5 wings
@@ -416,13 +422,78 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
     return () => window.removeEventListener('resize', checkTouchDevice);
   }, []);
 
+  // Initialize audio context
+  useEffect(() => {
+    // Create audio context
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        audioContextRef.current = new AudioContextClass();
+      }
+    } catch (error) {
+      console.warn('AudioContext not supported:', error);
+    }
+
+    // Unlock audio on first user interaction
+    const unlockAudio = async () => {
+      if (!audioUnlockedRef.current && audioContextRef.current) {
+        try {
+          // Resume audio context (required for mobile browsers)
+          if (audioContextRef.current.state === 'suspended') {
+            await audioContextRef.current.resume();
+          }
+          // Play a silent sound to unlock
+          const oscillator = audioContextRef.current.createOscillator();
+          const gainNode = audioContextRef.current.createGain();
+          gainNode.gain.value = 0;
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContextRef.current.destination);
+          oscillator.start();
+          oscillator.stop(audioContextRef.current.currentTime + 0.001);
+          audioUnlockedRef.current = true;
+        } catch (error) {
+          // Silent fail
+        }
+      }
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+    };
+
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {
+          // Ignore errors on close
+        });
+      }
+    };
+  }, []);
+
   // Classic Nokia Snake beep sound using Web Audio API
-  const playNokiaBeep = useCallback(() => {
+  const playNokiaBeep = useCallback(async () => {
     if (!soundEnabled) return;
     
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      const audioContext = new AudioContext();
+      // Ensure we have an audio context
+      if (!audioContextRef.current) {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+          audioContextRef.current = new AudioContextClass();
+        } else {
+          return;
+        }
+      }
+
+      const audioContext = audioContextRef.current;
+
+      // Resume audio context if suspended (mobile browsers)
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
       
       // Create oscillator for classic Nokia beep
       const oscillator = audioContext.createOscillator();
@@ -503,6 +574,7 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
     setScore(0);
     setWingsEaten(0);
     setSpeed(INITIAL_SPEED);
+    setIsNewHighScore(false);
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
@@ -570,25 +642,65 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
               </div>
             </div>
             {bestScore > 0 && (
-              <div
+              <motion.div
+                key={bestScore}
+                initial={false}
+                animate={{
+                  scale: isNewHighScore ? [1, 1.2, 1.1, 1] : 1,
+                }}
+                transition={{
+                  duration: 1.5,
+                  ease: 'easeOut',
+                  times: [0, 0.3, 0.7, 1],
+                }}
                 style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  backgroundColor: isNewHighScore 
+                    ? 'rgba(255, 215, 0, 0.95)'
+                    : 'rgba(255, 255, 255, 0.95)',
                   padding: 'clamp(4px, 1vw, 8px) clamp(10px, 1.5vw, 14px)',
                   borderRadius: wingShackTheme.borderRadius.md,
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                  boxShadow: isNewHighScore
+                    ? '0 4px 20px rgba(255, 215, 0, 0.6)'
+                    : '0 2px 8px rgba(0, 0, 0, 0.1)',
                 }}
               >
-                <div
+                <motion.div
+                  animate={{
+                    color: isNewHighScore
+                      ? [wingShackTheme.colors.secondary, '#FF8C00', wingShackTheme.colors.secondary]
+                      : wingShackTheme.colors.secondary,
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    ease: 'easeOut',
+                    times: [0, 0.3, 1],
+                  }}
                   style={{
                     fontFamily: wingShackTheme.typography.fontFamily.display,
                     fontSize: 'clamp(12px, 2vw, 18px)',
                     fontWeight: wingShackTheme.typography.fontWeight.bold,
-                    color: wingShackTheme.colors.secondary,
                   }}
                 >
                   Best: {bestScore}
-                </div>
-              </div>
+                  {isNewHighScore && (
+                    <motion.span
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: [0, 1, 1, 0], x: [0, 0, 10, 20] }}
+                      transition={{
+                        duration: 1.5,
+                        ease: 'easeOut',
+                        times: [0, 0.2, 0.8, 1],
+                      }}
+                      style={{
+                        marginLeft: '8px',
+                        fontSize: 'clamp(14px, 2.2vw, 20px)',
+                      }}
+                    >
+                      🎉
+                    </motion.span>
+                  )}
+                </motion.div>
+              </motion.div>
             )}
           </div>
         )}
