@@ -22,8 +22,9 @@ const BALL_SPEED_BASE = 200; // px/s - base ball speed
 const BALL_SPEED_MAX = 400; // px/s - maximum ball speed
 const BALL_SPEED_INCREASE = 15; // px/s increase per paddle hit
 const PADDLE_SPEED = 300; // px/s - player paddle speed
-const AI_PADDLE_SPEED = 250; // px/s - AI paddle max speed (slightly slower for fairness)
-const AI_REACTION_DELAY = 150; // ms - AI reaction lag
+const AI_PADDLE_SPEED = 180; // px/s - AI paddle max speed (reduced for easier gameplay)
+const AI_REACTION_DELAY = 280; // ms - AI reaction lag (increased for easier gameplay)
+const AI_ACCURACY = 0.85; // 0-1, lower = less accurate (AI aims slightly off-center)
 const WIN_SCORE = 7; // First to 7 wins
 const COURT_MARGIN = 20; // pixels - margin from edges
 const COUNTDOWN_DURATION = 1000; // ms - 1 second per countdown number (5 seconds total: 5->4->3->2->1)
@@ -285,11 +286,14 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
       }
     }
 
-    // Update AI paddle (with reaction delay)
+    // Update AI paddle (with reaction delay and inaccuracy)
     aiReactionTimerRef.current += dt * 1000;
     if (aiReactionTimerRef.current >= AI_REACTION_DELAY) {
-      // Update target to track ball
-      aiTargetYRef.current = ballYRef.current;
+      // Update target to track ball, but with some inaccuracy
+      const perfectTarget = ballYRef.current;
+      const inaccuracyRange = PADDLE_HEIGHT * (1 - AI_ACCURACY);
+      const inaccuracy = (Math.random() - 0.5) * inaccuracyRange;
+      aiTargetYRef.current = perfectTarget + inaccuracy;
       aiReactionTimerRef.current = 0;
     }
 
