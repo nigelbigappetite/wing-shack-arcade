@@ -8,6 +8,12 @@ import Snake from '@/components/games/Snake';
 import { wingShackTheme } from '@/theme/wingShackTheme';
 import WingShackLogo from '@/components/ui/WingShackLogo';
 
+interface LeaderboardEntry {
+  rank: number;
+  player_name: string;
+  score: number;
+}
+
 export default function SnakePage() {
   const [resetKey, setResetKey] = useState(0);
   const [gameOverScore, setGameOverScore] = useState<number | null>(null);
@@ -15,6 +21,37 @@ export default function SnakePage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [topLeaderboard, setTopLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+
+  // Fetch top 3 leaderboard entries
+  const fetchTopLeaderboard = useCallback(async () => {
+    setLeaderboardLoading(true);
+    try {
+      const response = await fetch('/api/leaderboard?game_id=snake');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.scores && Array.isArray(data.scores)) {
+          // Take top 3 and add rank
+          const top3 = data.scores.slice(0, 3).map((entry: any, index: number) => ({
+            rank: index + 1,
+            player_name: entry.player_name || 'Anonymous',
+            score: entry.score || 0,
+          }));
+          setTopLeaderboard(top3);
+        } else {
+          setTopLeaderboard([]);
+        }
+      } else {
+        setTopLeaderboard([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch leaderboard:', error);
+      setTopLeaderboard([]);
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  }, []);
 
   // Handle game over
   const handleGameOver = useCallback((finalScore: number) => {
@@ -22,7 +59,9 @@ export default function SnakePage() {
     setPlayerName('');
     setSubmitError(null);
     setSubmitSuccess(false);
-  }, []);
+    // Fetch leaderboard when game over
+    fetchTopLeaderboard();
+  }, [fetchTopLeaderboard]);
 
   // Handle score submission
   const handleSubmitScore = useCallback(async () => {
@@ -201,6 +240,123 @@ export default function SnakePage() {
                 }}
               >
                 Final Score: {gameOverScore}
+              </div>
+
+              {/* Top 3 Leaderboard */}
+              <div
+                style={{
+                  marginBottom: 'clamp(24px, 4vw, 32px)',
+                }}
+              >
+                <h3
+                  style={{
+                    fontFamily: wingShackTheme.typography.fontFamily.display,
+                    fontSize: 'clamp(18px, 3vw, 24px)',
+                    fontWeight: wingShackTheme.typography.fontWeight.bold,
+                    color: wingShackTheme.colors.text,
+                    textAlign: 'center',
+                    margin: '0 0 clamp(12px, 2vw, 16px) 0',
+                  }}
+                >
+                  Top 3
+                </h3>
+                {leaderboardLoading ? (
+                  <div
+                    style={{
+                      textAlign: 'center',
+                      color: wingShackTheme.colors.textSecondary,
+                      fontFamily: wingShackTheme.typography.fontFamily.body,
+                      fontSize: 'clamp(14px, 2vw, 18px)',
+                      padding: 'clamp(16px, 3vw, 24px)',
+                    }}
+                  >
+                    Loading...
+                  </div>
+                ) : topLeaderboard.length === 0 ? (
+                  <div
+                    style={{
+                      textAlign: 'center',
+                      color: wingShackTheme.colors.textSecondary,
+                      fontFamily: wingShackTheme.typography.fontFamily.body,
+                      fontSize: 'clamp(14px, 2vw, 18px)',
+                      padding: 'clamp(16px, 3vw, 24px)',
+                    }}
+                  >
+                    No scores yet — be the first.
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 'clamp(8px, 1.5vw, 12px)',
+                    }}
+                  >
+                    {topLeaderboard.map((entry) => (
+                      <div
+                        key={entry.rank}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: 'clamp(10px, 2vw, 14px)',
+                          backgroundColor: entry.rank === 1 
+                            ? 'rgba(255, 215, 0, 0.1)' 
+                            : 'rgba(0, 0, 0, 0.05)',
+                          borderRadius: wingShackTheme.borderRadius.md,
+                          border: entry.rank === 1 
+                            ? '2px solid rgba(255, 215, 0, 0.3)' 
+                            : '1px solid rgba(0, 0, 0, 0.1)',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 'clamp(12px, 2vw, 16px)',
+                            flex: 1,
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontFamily: wingShackTheme.typography.fontFamily.display,
+                              fontSize: 'clamp(20px, 3vw, 28px)',
+                              fontWeight: wingShackTheme.typography.fontWeight.bold,
+                              color: entry.rank === 1 
+                                ? '#FFD700' 
+                                : wingShackTheme.colors.textSecondary,
+                              minWidth: 'clamp(30px, 5vw, 40px)',
+                              textAlign: 'center',
+                            }}
+                          >
+                            {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : '🥉'}
+                          </div>
+                          <div
+                            style={{
+                              fontFamily: wingShackTheme.typography.fontFamily.body,
+                              fontSize: 'clamp(14px, 2vw, 18px)',
+                              fontWeight: wingShackTheme.typography.fontWeight.medium,
+                              color: wingShackTheme.colors.text,
+                              flex: 1,
+                            }}
+                          >
+                            {entry.player_name}
+                          </div>
+                        </div>
+                        <div
+                          style={{
+                            fontFamily: wingShackTheme.typography.fontFamily.display,
+                            fontSize: 'clamp(16px, 2.5vw, 22px)',
+                            fontWeight: wingShackTheme.typography.fontWeight.bold,
+                            color: wingShackTheme.colors.primary,
+                          }}
+                        >
+                          {entry.score}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {gameOverScore >= 1 && !submitSuccess && (

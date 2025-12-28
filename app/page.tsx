@@ -234,18 +234,28 @@ export default function Home() {
                         🧠
                       </motion.div>
                     ) : game.icon === 'flappy-wing-image' ? (
-                      <Image
-                        src="/wingston flappybird.png"
-                        alt="Flappy Wing"
-                        width={400}
-                        height={400}
+                      <div
                         style={{
-                          width: 'clamp(280px, 40vw, 400px)',
-                          height: 'clamp(280px, 40vw, 400px)',
-                          objectFit: 'contain',
-                          filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
+                          width: 'clamp(100px, 15vw, 150px)',
+                          height: 'clamp(100px, 15vw, 150px)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                         }}
-                      />
+                      >
+                        <Image
+                          src="/wingston flappybird.png"
+                          alt="Flappy Wing"
+                          width={150}
+                          height={150}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain',
+                            filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
+                          }}
+                        />
+                      </div>
                     ) : (
                       game.icon
                     )}

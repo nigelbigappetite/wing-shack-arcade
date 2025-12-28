@@ -23,10 +23,10 @@ interface Pipe {
 }
 
 // Physics constants (frame-rate independent, in px/s and px/s^2)
-const GRAVITY = 1800; // px/s^2
-const FLAP_VELOCITY = -350; // px/s (negative = upward) - reduced for micro-tap control (was -420)
+const GRAVITY = 2000; // px/s^2 - increased for stronger gravity requiring active tapping
+const FLAP_VELOCITY = -320; // px/s (negative = upward) - weaker flap for micro-tap control
 const MAX_FALL_SPEED = 1000; // px/s (positive = downward)
-const MAX_RISE_SPEED = -600; // px/s (negative = upward)
+const MAX_RISE_SPEED = -520; // px/s (negative = upward) - reduced to prevent rocket jumps
 
 // Game constants
 const PIPE_SPEED = 150; // px/s

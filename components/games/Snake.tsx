@@ -731,38 +731,44 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
           />
         </div>
 
-        {/* D-Pad for Mobile - Always visible on touch devices */}
+        {/* D-Pad for Mobile - Mobile best-practice ergonomics */}
         {isTouchDevice && (
           <div
+            onTouchStart={(e) => e.preventDefault()}
+            onTouchMove={(e) => e.preventDefault()}
             style={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 'clamp(4px, 1vw, 8px)',
+              gap: 'clamp(12px, 2vw, 16px)', // Minimum 12px spacing (mobile best practice)
               flexShrink: 0,
-              padding: 'clamp(4px, 1vw, 8px)',
+              padding: 'clamp(16px, 3vw, 24px)',
+              paddingBottom: 'clamp(24px, 5vw, 40px)', // Extra bottom padding for safe area
+              touchAction: 'none', // Prevent scrolling
             }}
           >
-            {/* Up Button */}
+            {/* Up Button - Minimum 56px touch target */}
             <motion.button
+              onPointerDown={(e) => {
+                e.preventDefault();
+                handleDirectionButton('up');
+              }}
               onTouchStart={(e) => {
                 e.preventDefault();
                 handleDirectionButton('up');
               }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                handleDirectionButton('up');
-              }}
               style={{
-                width: 'clamp(60px, 15vw, 80px)',
-                height: 'clamp(50px, 12vw, 65px)',
+                minWidth: '56px', // Mobile best practice minimum
+                minHeight: '56px',
+                width: 'clamp(56px, 18vw, 80px)',
+                height: 'clamp(56px, 18vw, 80px)',
                 backgroundColor: wingShackTheme.colors.primary,
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: wingShackTheme.borderRadius.md,
                 fontFamily: wingShackTheme.typography.fontFamily.display,
-                fontSize: 'clamp(20px, 4vw, 28px)',
+                fontSize: 'clamp(24px, 5vw, 32px)',
                 fontWeight: wingShackTheme.typography.fontWeight.bold,
                 cursor: 'pointer',
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
@@ -771,8 +777,11 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
               }}
-              whileTap={{ scale: 0.9 }}
+              whileTap={{ scale: 0.92, backgroundColor: wingShackTheme.colors.primaryDark }}
+              transition={{ duration: 0.1 }}
             >
               ↑
             </motion.button>
@@ -783,28 +792,30 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 'clamp(8px, 1.5vw, 12px)',
+                gap: 'clamp(12px, 2vw, 16px)', // Minimum 12px spacing
               }}
             >
               {/* Left Button */}
               <motion.button
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  handleDirectionButton('left');
+                }}
                 onTouchStart={(e) => {
                   e.preventDefault();
                   handleDirectionButton('left');
                 }}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  handleDirectionButton('left');
-                }}
                 style={{
-                  width: 'clamp(60px, 15vw, 80px)',
-                  height: 'clamp(50px, 12vw, 65px)',
+                  minWidth: '56px',
+                  minHeight: '56px',
+                  width: 'clamp(56px, 18vw, 80px)',
+                  height: 'clamp(56px, 18vw, 80px)',
                   backgroundColor: wingShackTheme.colors.primary,
                   color: '#ffffff',
                   border: 'none',
                   borderRadius: wingShackTheme.borderRadius.md,
                   fontFamily: wingShackTheme.typography.fontFamily.display,
-                  fontSize: 'clamp(20px, 4vw, 28px)',
+                  fontSize: 'clamp(24px, 5vw, 32px)',
                   fontWeight: wingShackTheme.typography.fontWeight.bold,
                   cursor: 'pointer',
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
@@ -813,34 +824,39 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
                 }}
-                whileTap={{ scale: 0.9 }}
+                whileTap={{ scale: 0.92, backgroundColor: wingShackTheme.colors.primaryDark }}
+                transition={{ duration: 0.1 }}
               >
                 ←
               </motion.button>
 
-              {/* Spacer */}
-              <div style={{ width: 'clamp(60px, 15vw, 80px)' }} />
+              {/* Spacer - matches button width */}
+              <div style={{ width: 'clamp(56px, 18vw, 80px)' }} />
 
               {/* Right Button */}
               <motion.button
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  handleDirectionButton('right');
+                }}
                 onTouchStart={(e) => {
                   e.preventDefault();
                   handleDirectionButton('right');
                 }}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  handleDirectionButton('right');
-                }}
                 style={{
-                  width: 'clamp(60px, 15vw, 80px)',
-                  height: 'clamp(50px, 12vw, 65px)',
+                  minWidth: '56px',
+                  minHeight: '56px',
+                  width: 'clamp(56px, 18vw, 80px)',
+                  height: 'clamp(56px, 18vw, 80px)',
                   backgroundColor: wingShackTheme.colors.primary,
                   color: '#ffffff',
                   border: 'none',
                   borderRadius: wingShackTheme.borderRadius.md,
                   fontFamily: wingShackTheme.typography.fontFamily.display,
-                  fontSize: 'clamp(20px, 4vw, 28px)',
+                  fontSize: 'clamp(24px, 5vw, 32px)',
                   fontWeight: wingShackTheme.typography.fontWeight.bold,
                   cursor: 'pointer',
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
@@ -849,8 +865,11 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
                 }}
-                whileTap={{ scale: 0.9 }}
+                whileTap={{ scale: 0.92, backgroundColor: wingShackTheme.colors.primaryDark }}
+                transition={{ duration: 0.1 }}
               >
                 →
               </motion.button>
@@ -858,23 +877,25 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
 
             {/* Down Button */}
             <motion.button
+              onPointerDown={(e) => {
+                e.preventDefault();
+                handleDirectionButton('down');
+              }}
               onTouchStart={(e) => {
                 e.preventDefault();
                 handleDirectionButton('down');
               }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                handleDirectionButton('down');
-              }}
               style={{
-                width: 'clamp(60px, 15vw, 80px)',
-                height: 'clamp(50px, 12vw, 65px)',
+                minWidth: '56px',
+                minHeight: '56px',
+                width: 'clamp(56px, 18vw, 80px)',
+                height: 'clamp(56px, 18vw, 80px)',
                 backgroundColor: wingShackTheme.colors.primary,
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: wingShackTheme.borderRadius.md,
                 fontFamily: wingShackTheme.typography.fontFamily.display,
-                fontSize: 'clamp(20px, 4vw, 28px)',
+                fontSize: 'clamp(24px, 5vw, 32px)',
                 fontWeight: wingShackTheme.typography.fontWeight.bold,
                 cursor: 'pointer',
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
@@ -883,8 +904,11 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
               }}
-              whileTap={{ scale: 0.9 }}
+              whileTap={{ scale: 0.92, backgroundColor: wingShackTheme.colors.primaryDark }}
+              transition={{ duration: 0.1 }}
             >
               ↓
             </motion.button>
