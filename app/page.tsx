@@ -65,6 +65,15 @@ const games: Game[] = [
     icon: 'flappy-wing-image',
     category: 'Arcade',
   },
+  {
+    id: 'pong',
+    title: 'PONG',
+    description: 'BEAT THE BOT. FIRST TO 7.',
+    href: '/pong',
+    color: '#4A90E2',
+    icon: '🏓',
+    category: 'Arcade',
+  },
 ];
 
 export default function Home() {
