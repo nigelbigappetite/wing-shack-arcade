@@ -609,39 +609,57 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
       birdYRef.current = displayHeight / 2;
     }
 
-    // Draw background image with cover behavior
+    // Draw background image with seamless looping
     if (backgroundLoadedRef.current && backgroundImageRef.current) {
       const bgImg = backgroundImageRef.current;
       const imgAspect = bgImg.width / bgImg.height;
       const canvasAspect = displayWidth / displayHeight;
       
-      let drawWidth: number, drawHeight: number, dx: number, dy: number;
+      let drawWidth: number, drawHeight: number, baseDx: number, dy: number;
       
       if (imgAspect > canvasAspect) {
-        // Image is wider - fit to height
+        // Image is wider - fit to height (cover behavior)
         drawHeight = displayHeight;
         drawWidth = drawHeight * imgAspect;
-        dx = (displayWidth - drawWidth) / 2 + backgroundOffsetRef.current;
+        baseDx = (displayWidth - drawWidth) / 2; // Center offset
         dy = 0;
       } else {
-        // Image is taller - fit to width
+        // Image is taller - fit to width (cover behavior)
         drawWidth = displayWidth;
         drawHeight = drawWidth / imgAspect;
-        dx = backgroundOffsetRef.current;
-        dy = (displayHeight - drawHeight) / 2;
+        baseDx = 0;
+        dy = (displayHeight - drawHeight) / 2; // Center offset
       }
       
-      // Subtle horizontal drift for parallax effect (loops seamlessly)
+      // Update background offset for seamless scrolling
       backgroundOffsetRef.current += 0.15; // Very subtle drift
-      if (backgroundOffsetRef.current > drawWidth) {
-        backgroundOffsetRef.current = -drawWidth;
+      
+      // Normalize offset to loop seamlessly (use drawWidth for horizontal scrolling)
+      // Ensure offset stays within [0, drawWidth) range
+      if (backgroundOffsetRef.current >= drawWidth) {
+        backgroundOffsetRef.current = backgroundOffsetRef.current % drawWidth;
+      }
+      if (backgroundOffsetRef.current < 0) {
+        backgroundOffsetRef.current = drawWidth + (backgroundOffsetRef.current % drawWidth);
       }
       
-      ctx.drawImage(bgImg, dx, dy, drawWidth, drawHeight);
+      const normalizedOffset = backgroundOffsetRef.current;
+      const dx = baseDx + normalizedOffset;
       
-      // Draw again if needed for seamless loop
-      if (dx < 0) {
-        ctx.drawImage(bgImg, dx + drawWidth, dy, drawWidth, drawHeight);
+      // Calculate how many instances we need to cover the entire screen
+      // We need to cover from baseDx to displayWidth
+      const startX = Math.min(baseDx, 0);
+      const endX = Math.max(baseDx + drawWidth, displayWidth);
+      const totalWidth = endX - startX;
+      const numInstances = Math.ceil(totalWidth / drawWidth) + 1; // +1 for safety
+      
+      // Draw multiple instances to ensure seamless coverage
+      for (let i = -1; i <= numInstances; i++) {
+        const instanceDx = dx + (i * drawWidth);
+        // Only draw if it's visible on screen
+        if (instanceDx + drawWidth > 0 && instanceDx < displayWidth) {
+          ctx.drawImage(bgImg, instanceDx, dy, drawWidth, drawHeight);
+        }
       }
     } else {
       // Fallback: solid color background
