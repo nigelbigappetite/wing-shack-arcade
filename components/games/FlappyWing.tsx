@@ -213,6 +213,22 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
   const playFlapSound = useCallback(async () => {
     if (!soundEnabled) return;
     
+    // Ensure audio is unlocked
+    if (!audioUnlockedRef.current) {
+      // Try to unlock now if we have a context
+      if (audioContextRef.current) {
+        try {
+          if (audioContextRef.current.state === 'suspended') {
+            await audioContextRef.current.resume();
+          }
+          audioUnlockedRef.current = true;
+        } catch (e) {
+          // Will unlock on next interaction
+        }
+      }
+      if (!audioUnlockedRef.current) return;
+    }
+    
     try {
       // Ensure we have an audio context
       if (!audioContextRef.current) {
@@ -255,6 +271,22 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
   // Play collision sound
   const playCollisionSound = useCallback(async () => {
     if (!soundEnabled) return;
+    
+    // Ensure audio is unlocked
+    if (!audioUnlockedRef.current) {
+      // Try to unlock now if we have a context
+      if (audioContextRef.current) {
+        try {
+          if (audioContextRef.current.state === 'suspended') {
+            await audioContextRef.current.resume();
+          }
+          audioUnlockedRef.current = true;
+        } catch (e) {
+          // Will unlock on next interaction
+        }
+      }
+      if (!audioUnlockedRef.current) return;
+    }
     
     try {
       // Ensure we have an audio context

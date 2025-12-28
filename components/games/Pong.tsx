@@ -75,21 +75,41 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
   const pointLossAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Unlock audio on first interaction
-  const unlockAudio = useCallback(() => {
+  const unlockAudio = useCallback(async () => {
     if (audioUnlockedRef.current) return;
     
     try {
       // Create AudioContext
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      audioContextRef.current = new AudioContextClass();
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContextClass();
+      }
+      
+      // Resume audio context if suspended (required for mobile browsers)
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
       
       // Create audio elements
       pointWinAudioRef.current = new Audio('/small_crowd_applause-yannick_lemieux-1268806408.mp3');
       pointLossAudioRef.current = new Audio('/john fuming.mp3');
       
-      // Preload
+      // Set volume
+      pointWinAudioRef.current.volume = 0.7;
+      pointLossAudioRef.current.volume = 0.7;
+      
+      // Preload and unlock by playing a silent sound
       pointWinAudioRef.current.load();
       pointLossAudioRef.current.load();
+      
+      // Play and immediately pause to unlock (required for mobile)
+      try {
+        await pointWinAudioRef.current.play();
+        pointWinAudioRef.current.pause();
+        pointWinAudioRef.current.currentTime = 0;
+      } catch (e) {
+        // Ignore - will try again on actual play
+      }
       
       audioUnlockedRef.current = true;
     } catch (error) {
@@ -98,21 +118,29 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
   }, []);
 
   // Play sound effect
-  const playSound = useCallback((sound: 'win' | 'loss') => {
-    if (!soundEnabled || !audioUnlockedRef.current) return;
+  const playSound = useCallback(async (sound: 'win' | 'loss') => {
+    if (!soundEnabled) return;
+    
+    // Ensure audio is unlocked
+    if (!audioUnlockedRef.current) {
+      await unlockAudio();
+    }
     
     try {
+      // Resume AudioContext if suspended (mobile browsers)
+      if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+      
       const audio = sound === 'win' ? pointWinAudioRef.current : pointLossAudioRef.current;
       if (audio) {
         audio.currentTime = 0; // Restart from beginning
-        audio.play().catch((err) => {
-          console.warn('Failed to play sound:', err);
-        });
+        await audio.play();
       }
     } catch (error) {
       console.warn('Error playing sound:', error);
     }
-  }, [soundEnabled]);
+  }, [soundEnabled, unlockAudio]);
 
   // Reset game
   const resetGame = useCallback(() => {
@@ -582,11 +610,13 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
   }, [gameState, roundCountdown, resetBall]);
 
   // Start game
-  const startGame = useCallback(() => {
+  const startGame = useCallback(async () => {
+    // Unlock audio when game starts (important for mobile)
+    await unlockAudio();
     resetGame();
     setGameState('running');
     lastFrameTimeRef.current = performance.now();
-  }, [resetGame]);
+  }, [resetGame, unlockAudio]);
 
   // Pause game
   const pauseGame = useCallback(() => {
