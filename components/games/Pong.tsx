@@ -132,12 +132,20 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
 
   // Reset ball to center and serve
   const resetBall = useCallback(() => {
+    // Reset paddles to center
+    playerPaddleYRef.current = gameHeightRef.current / 2;
+    aiPaddleYRef.current = gameHeightRef.current / 2;
+    aiTargetYRef.current = gameHeightRef.current / 2;
+    targetYRef.current = gameHeightRef.current / 2;
+    
+    // Reset ball
     ballXRef.current = gameWidthRef.current / 2;
     ballYRef.current = gameHeightRef.current / 2;
     // Serve towards player or AI randomly
     const serveDirection = Math.random() > 0.5 ? 1 : -1;
     ballVelXRef.current = BALL_SPEED_BASE * serveDirection;
     ballVelYRef.current = (Math.random() - 0.5) * 100; // Random Y velocity
+    ballSpeedRef.current = BALL_SPEED_BASE;
   }, []);
 
   // Handle touch/mouse input (tap-to-position)
@@ -198,23 +206,23 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
     }
   }, [handleInput, controlMode]);
 
-  // Trackpad controls
+  // Trackpad controls - work during running state
   const handleTrackpadUp = useCallback((isPressed: boolean) => {
-    if (gameState !== 'running' || controlMode !== 'trackpad') return;
+    if (controlMode !== 'trackpad') return;
     trackpadUpPressedRef.current = isPressed;
     setTrackpadUpPressed(isPressed);
     unlockAudio();
-  }, [gameState, controlMode, unlockAudio]);
+  }, [controlMode, unlockAudio]);
 
   const handleTrackpadDown = useCallback((isPressed: boolean) => {
-    if (gameState !== 'running' || controlMode !== 'trackpad') return;
+    if (controlMode !== 'trackpad') return;
     trackpadDownPressedRef.current = isPressed;
     setTrackpadDownPressed(isPressed);
     unlockAudio();
-  }, [gameState, controlMode, unlockAudio]);
+  }, [controlMode, unlockAudio]);
 
   const handleTrackpadTap = useCallback((direction: 'up' | 'down') => {
-    if (gameState !== 'running' || controlMode !== 'trackpad') return;
+    if (controlMode !== 'trackpad') return;
     unlockAudio();
     
     const nudge = direction === 'up' ? -TRACKPAD_TAP_NUDGE : TRACKPAD_TAP_NUDGE;
@@ -226,7 +234,7 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
       )
     );
     targetYRef.current = newY;
-  }, [gameState, controlMode, unlockAudio]);
+  }, [controlMode, unlockAudio]);
 
   // Game loop
   const gameLoop = useCallback((timestamp: number) => {
@@ -426,12 +434,12 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, displayWidth, displayHeight);
 
-    // Draw center line (dashed)
+    // Draw center line (dashed) - but not through scoreboard
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
     ctx.setLineDash([10, 10]);
     ctx.beginPath();
-    ctx.moveTo(displayWidth / 2, COURT_MARGIN);
+    ctx.moveTo(displayWidth / 2, COURT_MARGIN + 60); // Start below scoreboard
     ctx.lineTo(displayWidth / 2, displayHeight - COURT_MARGIN);
     ctx.stroke();
     ctx.setLineDash([]);
@@ -466,14 +474,47 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
       ctx.fill();
     }
 
-    // Draw score
+    // Draw digital scoreboard (no line through it)
+    const scoreboardY = clamp(35, displayHeight * 0.06, 55);
+    const scoreFontSize = clamp(32, displayWidth * 0.08, 64);
+    
+    // Scoreboard background (subtle)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillRect(
+      displayWidth / 2 - clamp(80, displayWidth * 0.2, 120),
+      scoreboardY - scoreFontSize * 0.7,
+      clamp(160, displayWidth * 0.4, 240),
+      scoreFontSize * 1.4
+    );
+    
+    // Player score (left side)
+    ctx.fillStyle = '#4ECDC4';
+    ctx.font = `bold ${scoreFontSize}px ${wingShackTheme.typography.fontFamily.display}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(
+      playerScore.toString(),
+      displayWidth / 2 - 15,
+      scoreboardY + scoreFontSize * 0.35
+    );
+    
+    // Separator (colon)
     ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${clamp(24, displayWidth * 0.06, 48)}px ${wingShackTheme.typography.fontFamily.display}`;
+    ctx.font = `bold ${scoreFontSize * 0.6}px ${wingShackTheme.typography.fontFamily.display}`;
     ctx.textAlign = 'center';
     ctx.fillText(
-      `${playerScore} - ${aiScore}`,
+      ':',
       displayWidth / 2,
-      clamp(30, displayHeight * 0.05, 50)
+      scoreboardY + scoreFontSize * 0.35
+    );
+    
+    // AI score (right side)
+    ctx.fillStyle = '#FF6B6B';
+    ctx.font = `bold ${scoreFontSize}px ${wingShackTheme.typography.fontFamily.display}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(
+      aiScore.toString(),
+      displayWidth / 2 + 15,
+      scoreboardY + scoreFontSize * 0.35
     );
   }, [gameState]);
 
@@ -625,38 +666,34 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
           }}
         />
 
-        {/* Control Mode Toggle - Fixed position below canvas */}
-        <div
-          style={{
-            marginTop: 'clamp(8px, 1.5vw, 12px)',
-            width: '100%',
-            maxWidth: 'clamp(320px, 90vw, 600px)',
-            display: 'flex',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <motion.button
-            onClick={() => setControlMode(controlMode === 'touch' ? 'trackpad' : 'touch')}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+        {/* Control Mode Indicator - Fixed position below canvas (during game) */}
+        {gameState !== 'idle' && (
+          <div
             style={{
-              padding: 'clamp(8px, 1.5vw, 12px) clamp(16px, 3vw, 24px)',
-              borderRadius: wingShackTheme.borderRadius.md,
-              border: 'none',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              color: wingShackTheme.colors.primary,
-              fontFamily: wingShackTheme.typography.fontFamily.body,
-              fontSize: 'clamp(12px, 2vw, 14px)',
-              fontWeight: wingShackTheme.typography.fontWeight.semibold,
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
-              whiteSpace: 'nowrap',
+              marginTop: 'clamp(8px, 1.5vw, 12px)',
+              width: '100%',
+              maxWidth: 'clamp(320px, 90vw, 600px)',
+              display: 'flex',
+              justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
-            {controlMode === 'touch' ? '👆 Touch Mode' : '🎮 Trackpad Mode'}
-          </motion.button>
-        </div>
+            <div
+              style={{
+                padding: 'clamp(6px, 1.5vw, 10px) clamp(12px, 2.5vw, 16px)',
+                borderRadius: wingShackTheme.borderRadius.md,
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                color: '#ffffff',
+                fontFamily: wingShackTheme.typography.fontFamily.body,
+                fontSize: 'clamp(11px, 1.8vw, 13px)',
+                fontWeight: wingShackTheme.typography.fontWeight.medium,
+                textAlign: 'center',
+              }}
+            >
+              {controlMode === 'touch' ? '👆 Touch Mode' : '🎮 Trackpad Mode'}
+            </div>
+          </div>
+        )}
 
         {/* Trackpad Controls */}
         {controlMode === 'trackpad' && (
@@ -761,7 +798,7 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
           </div>
         )}
 
-        {/* Idle overlay */}
+        {/* Idle overlay with control mode selection */}
         {gameState === 'idle' && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -773,13 +810,11 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 'clamp(12px, 2vw, 20px)',
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              gap: 'clamp(16px, 3vw, 24px)',
+              backgroundColor: 'rgba(0, 0, 0, 0.85)',
               borderRadius: wingShackTheme.borderRadius.md,
               padding: 'clamp(24px, 4vw, 40px)',
-              cursor: 'pointer',
             }}
-            onClick={handleStart}
           >
             <div
               style={{
@@ -788,20 +823,103 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
                 fontWeight: wingShackTheme.typography.fontWeight.bold,
                 color: '#ffffff',
                 textAlign: 'center',
+                marginBottom: 'clamp(8px, 1.5vw, 12px)',
               }}
             >
               🏓 PONG
             </div>
+            
+            {/* Control Mode Selection */}
             <div
               style={{
-                fontFamily: wingShackTheme.typography.fontFamily.body,
-                fontSize: 'clamp(16px, 2.5vw, 20px)',
-                color: '#ffffff',
-                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 'clamp(12px, 2vw, 16px)',
+                width: '100%',
+                maxWidth: 'clamp(200px, 50vw, 300px)',
               }}
             >
-              Tap to start
+              <div
+                style={{
+                  fontFamily: wingShackTheme.typography.fontFamily.body,
+                  fontSize: 'clamp(14px, 2vw, 16px)',
+                  color: '#ffffff',
+                  textAlign: 'center',
+                  marginBottom: 'clamp(4px, 1vw, 8px)',
+                  opacity: 0.9,
+                }}
+              >
+                Choose Control Mode:
+              </div>
+              
+              {/* Touch Mode Button */}
+              <motion.button
+                onClick={() => {
+                  setControlMode('touch');
+                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  padding: 'clamp(12px, 2.5vw, 16px)',
+                  borderRadius: wingShackTheme.borderRadius.md,
+                  border: controlMode === 'touch' ? '2px solid #4ECDC4' : '2px solid rgba(255, 255, 255, 0.3)',
+                  backgroundColor: controlMode === 'touch' ? 'rgba(78, 205, 196, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+                  color: '#ffffff',
+                  fontFamily: wingShackTheme.typography.fontFamily.body,
+                  fontSize: 'clamp(16px, 2.5vw, 18px)',
+                  fontWeight: wingShackTheme.typography.fontWeight.semibold,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                👆 Touch Mode
+              </motion.button>
+              
+              {/* Trackpad Mode Button */}
+              <motion.button
+                onClick={() => {
+                  setControlMode('trackpad');
+                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  padding: 'clamp(12px, 2.5vw, 16px)',
+                  borderRadius: wingShackTheme.borderRadius.md,
+                  border: controlMode === 'trackpad' ? '2px solid #4ECDC4' : '2px solid rgba(255, 255, 255, 0.3)',
+                  backgroundColor: controlMode === 'trackpad' ? 'rgba(78, 205, 196, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+                  color: '#ffffff',
+                  fontFamily: wingShackTheme.typography.fontFamily.body,
+                  fontSize: 'clamp(16px, 2.5vw, 18px)',
+                  fontWeight: wingShackTheme.typography.fontWeight.semibold,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                🎮 Trackpad Mode
+              </motion.button>
             </div>
+            
+            {/* Start Button */}
+            <motion.button
+              onClick={handleStart}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{
+                marginTop: 'clamp(8px, 1.5vw, 12px)',
+                padding: 'clamp(12px, 2.5vw, 16px) clamp(24px, 5vw, 32px)',
+                borderRadius: wingShackTheme.borderRadius.md,
+                border: 'none',
+                backgroundColor: wingShackTheme.colors.primary,
+                color: '#ffffff',
+                fontFamily: wingShackTheme.typography.fontFamily.body,
+                fontSize: 'clamp(18px, 3vw, 22px)',
+                fontWeight: wingShackTheme.typography.fontWeight.bold,
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+              }}
+            >
+              START GAME
+            </motion.button>
           </motion.div>
         )}
 
