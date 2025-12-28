@@ -51,12 +51,28 @@ export async function GET(request: NextRequest) {
     // Log game_id distribution for debugging
     if (allData && allData.length > 0) {
       const gameIdCounts: Record<string, number> = {};
+      const gameIdValues: string[] = [];
       allData.forEach((row: any) => {
         const gid = row.game_id || 'unknown';
         gameIdCounts[gid] = (gameIdCounts[gid] || 0) + 1;
+        if (!gameIdValues.includes(gid)) {
+          gameIdValues.push(gid);
+        }
       });
       console.log('📊 Game ID distribution:', gameIdCounts);
-      console.log(`📊 Records with game_id='${gameId}':`, allData.filter((row: any) => row.game_id === gameId).length);
+      console.log('📊 All unique game_id values found:', gameIdValues);
+      console.log(`📊 Looking for game_id='${gameId}' (exact match)`);
+      console.log(`📊 Records with exact game_id='${gameId}':`, allData.filter((row: any) => row.game_id === gameId).length);
+      console.log(`📊 Records with game_id containing '${gameId}':`, allData.filter((row: any) => row.game_id && row.game_id.includes(gameId)).length);
+      
+      // Show sample of game_id values
+      const sampleGameIds = allData.slice(0, 5).map((row: any) => ({
+        id: row.id,
+        game_id: row.game_id,
+        game_id_type: typeof row.game_id,
+        game_id_length: row.game_id?.length
+      }));
+      console.log('📊 Sample game_id values:', sampleGameIds);
     }
 
     // Now fetch with filter - try multiple approaches
@@ -77,21 +93,39 @@ export async function GET(request: NextRequest) {
       error: error ? JSON.stringify(error, null, 2) : null
     });
 
-    // If filtered query returns empty but we have data, try filtering client-side
+    // Always use client-side filtering if we have allData, to ensure we get all matching records
     let finalData = data;
-    if ((!data || data.length === 0) && allData && allData.length > 0) {
-      console.log('⚠️ Filtered query returned empty, trying client-side filter');
+    if (allData && allData.length > 0) {
+      console.log('🔄 Using client-side filtering to ensure all matching records are included');
       const filtered = allData
-        .filter((row: any) => row.game_id === gameId)
+        .filter((row: any) => {
+          // Try exact match first
+          if (row.game_id === gameId) return true;
+          // Try case-insensitive match
+          if (row.game_id && row.game_id.toLowerCase() === gameId.toLowerCase()) return true;
+          // Try trimmed match (in case of whitespace)
+          if (row.game_id && row.game_id.trim() === gameId.trim()) return true;
+          return false;
+        })
         .sort((a: any, b: any) => {
+          // Sort by score descending, then by created_at ascending (older first for same score)
           if (b.score !== a.score) return b.score - a.score;
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return aTime - bTime;
         })
         .slice(0, 10);
       
       console.log('📊 Client-side filtered result:', {
         count: filtered.length,
-        data: filtered
+        exactMatchCount: allData.filter((row: any) => row.game_id === gameId).length,
+        caseInsensitiveMatchCount: allData.filter((row: any) => row.game_id && row.game_id.toLowerCase() === gameId.toLowerCase()).length,
+        data: filtered.map((row: any) => ({
+          id: row.id,
+          game_id: row.game_id,
+          player_name: row.player_name,
+          score: row.score
+        }))
       });
       
       finalData = filtered;
