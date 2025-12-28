@@ -24,7 +24,7 @@ interface Pipe {
 
 // Physics constants (frame-rate independent, in px/s and px/s^2)
 const GRAVITY = 1800; // px/s^2
-const FLAP_VELOCITY = -450; // px/s (negative = upward)
+const FLAP_VELOCITY = -420; // px/s (negative = upward) - tuned for micro-tap control
 const MAX_FALL_SPEED = 1000; // px/s (positive = downward)
 const MAX_RISE_SPEED = -600; // px/s (negative = upward)
 
@@ -33,8 +33,15 @@ const PIPE_SPEED = 150; // px/s
 const PIPE_SPAWN_INTERVAL = 1600; // ms
 const PIPE_GAP = 140; // pixels
 const PIPE_WIDTH = 60;
-const BIRD_SIZE = 30;
+const BIRD_SIZE = 36; // Increased by 20% for better visibility (was 30)
 const BIRD_START_X = 100;
+
+// Assist curve constants (early game only)
+const ASSIST_SCORE_THRESHOLD = 10;
+const ASSIST_GRAVITY_MIN = 0.85; // Minimum gravity multiplier (more assist)
+const ASSIST_GRAVITY_MAX = 1.0; // Maximum gravity multiplier (no assist)
+const ANTI_PLUMMET_THRESHOLD = 0.67; // Bottom third of screen (2/3 from top)
+const ANTI_PLUMMET_GRAVITY_REDUCTION = 0.12; // 12% gravity reduction when plummeting
 
 const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
   const { soundEnabled } = useGameShellContext();
@@ -43,7 +50,14 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
   const [bestScore, setBestScore] = useState(0);
   const [screenShake, setScreenShake] = useState(0);
   const [showDebug, setShowDebug] = useState(false);
-  const [debugInfo, setDebugInfo] = useState({ y: 0, velY: 0 });
+  const [debugInfo, setDebugInfo] = useState({ 
+    y: 0, 
+    velY: 0, 
+    gravity: GRAVITY,
+    effectiveGravity: GRAVITY,
+    flapVelocity: FLAP_VELOCITY,
+    characterSize: BIRD_SIZE 
+  });
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -224,9 +238,29 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
     // Clamp dt to avoid lag spikes (max 30fps equivalent)
     dt = Math.min(dt, 0.033);
 
+    // Calculate effective gravity with assist curves (early game only)
+    let effectiveGravity = GRAVITY;
+    
+    // Assist curve 1: Dynamic gravity scaling for first 10 points
+    if (score < ASSIST_SCORE_THRESHOLD) {
+      const assistProgress = score / ASSIST_SCORE_THRESHOLD; // 0.0 to 1.0
+      const gravityMultiplier = ASSIST_GRAVITY_MIN + (ASSIST_GRAVITY_MAX - ASSIST_GRAVITY_MIN) * assistProgress;
+      effectiveGravity = GRAVITY * gravityMultiplier;
+    }
+    
+    // Assist curve 2: Anti-plummet protection (subtle, near bottom of screen)
+    const screenBottomThird = gameHeightRef.current * ANTI_PLUMMET_THRESHOLD;
+    const isFallingFast = birdVelocityRef.current > 0;
+    const isNearBottom = birdYRef.current > screenBottomThird;
+    
+    if (isFallingFast && isNearBottom) {
+      // Slightly reduce gravity when plummeting near bottom (subtle assist)
+      effectiveGravity *= (1 - ANTI_PLUMMET_GRAVITY_REDUCTION);
+    }
+
     // Update bird physics (frame-rate independent)
-    // Apply gravity: velY += gravity * dt
-    birdVelocityRef.current += GRAVITY * dt;
+    // Apply gravity: velY += effectiveGravity * dt
+    birdVelocityRef.current += effectiveGravity * dt;
     
     // Clamp velocity
     birdVelocityRef.current = Math.max(MAX_RISE_SPEED, Math.min(MAX_FALL_SPEED, birdVelocityRef.current));
@@ -234,11 +268,18 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
     // Update position: y += velY * dt
     birdYRef.current += birdVelocityRef.current * dt;
 
+    // Calculate effective gravity for debug display (reuse same logic)
+    let effectiveGravityForDebug = effectiveGravity;
+
     // Update debug info (only if debug is enabled to avoid unnecessary state updates)
     if (showDebug) {
       setDebugInfo({
         y: Math.round(birdYRef.current),
         velY: Math.round(birdVelocityRef.current),
+        gravity: GRAVITY,
+        effectiveGravity: Math.round(effectiveGravityForDebug),
+        flapVelocity: FLAP_VELOCITY,
+        characterSize: BIRD_SIZE,
       });
     }
 
