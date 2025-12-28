@@ -609,7 +609,11 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
       birdYRef.current = displayHeight / 2;
     }
 
-    // Draw background image with seamless looping
+    // Draw background image with seamless looping - ensure full coverage
+    // First, fill entire canvas with fallback color to eliminate any white space
+    ctx.fillStyle = '#87CEEB'; // Sky blue fallback
+    ctx.fillRect(0, 0, displayWidth, displayHeight);
+    
     if (backgroundLoadedRef.current && backgroundImageRef.current) {
       const bgImg = backgroundImageRef.current;
       const imgAspect = bgImg.width / bgImg.height;
@@ -621,14 +625,16 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
         // Image is wider - fit to height (cover behavior)
         drawHeight = displayHeight;
         drawWidth = drawHeight * imgAspect;
-        baseDx = (displayWidth - drawWidth) / 2; // Center offset
+        // For seamless horizontal scrolling, don't center - start from left
+        baseDx = 0;
         dy = 0;
       } else {
         // Image is taller - fit to width (cover behavior)
         drawWidth = displayWidth;
         drawHeight = drawWidth / imgAspect;
         baseDx = 0;
-        dy = (displayHeight - drawHeight) / 2; // Center offset
+        // Center vertically but ensure full width coverage
+        dy = (displayHeight - drawHeight) / 2;
       }
       
       // Update background offset for seamless scrolling
@@ -644,27 +650,30 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
       }
       
       const normalizedOffset = backgroundOffsetRef.current;
-      const dx = baseDx + normalizedOffset;
       
-      // Calculate how many instances we need to cover the entire screen
-      // We need to cover from baseDx to displayWidth
-      const startX = Math.min(baseDx, 0);
-      const endX = Math.max(baseDx + drawWidth, displayWidth);
-      const totalWidth = endX - startX;
-      const numInstances = Math.ceil(totalWidth / drawWidth) + 1; // +1 for safety
+      // Calculate starting position for seamless loop
+      // We want to draw from the left edge, accounting for the offset
+      const startDx = baseDx - normalizedOffset;
       
-      // Draw multiple instances to ensure seamless coverage
-      for (let i = -1; i <= numInstances; i++) {
-        const instanceDx = dx + (i * drawWidth);
-        // Only draw if it's visible on screen
+      // Draw enough instances to cover entire screen width with overlap
+      // Calculate how many instances we need
+      const numInstances = Math.ceil(displayWidth / drawWidth) + 2; // +2 for safety and overlap
+      
+      // Draw multiple instances to ensure seamless coverage with no gaps
+      for (let i = 0; i < numInstances; i++) {
+        const instanceDx = startDx + (i * drawWidth);
+        // Draw if any part is visible on screen
         if (instanceDx + drawWidth > 0 && instanceDx < displayWidth) {
           ctx.drawImage(bgImg, instanceDx, dy, drawWidth, drawHeight);
         }
       }
-    } else {
-      // Fallback: solid color background
-      ctx.fillStyle = '#87CEEB'; // Sky blue
-      ctx.fillRect(0, 0, displayWidth, displayHeight);
+      
+      // Fill any remaining gaps at top/bottom if image doesn't cover full height
+      if (dy > 0) {
+        ctx.fillStyle = '#87CEEB';
+        ctx.fillRect(0, 0, displayWidth, dy);
+        ctx.fillRect(0, dy + drawHeight, displayWidth, displayHeight - (dy + drawHeight));
+      }
     }
 
     // Draw ground
