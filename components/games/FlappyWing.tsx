@@ -19,6 +19,8 @@ interface Pipe {
   topHeight: number;
   bottomY: number;
   gap: number;
+  width: number; // Variable width for visual variation
+  capHeight: number; // Variable cap height for visual variation
   passed: boolean;
 }
 
@@ -28,15 +30,23 @@ const FLAP_VELOCITY = -320; // px/s (negative = upward) - weaker flap for micro-
 const MAX_FALL_SPEED = 1000; // px/s (positive = downward)
 const MAX_RISE_SPEED = -520; // px/s (negative = upward) - reduced to prevent rocket jumps
 
-// Game constants
+// Game constants - Tune these for difficulty progression
 const PIPE_SPEED = 150; // px/s
 const PIPE_SPAWN_INTERVAL = 1600; // ms
-const PIPE_GAP = 200; // pixels - increased to accommodate larger bird (was 140)
-const PIPE_WIDTH = 60;
+const BASE_PIPE_GAP = 200; // Base gap size (pixels) - will decrease with score
+const MIN_PIPE_GAP = 125; // Minimum safe gap size (pixels)
+const BASE_PIPE_WIDTH = 60; // Base pipe width (pixels)
+const MAX_PIPE_WIDTH_VARIATION = 12; // Maximum width variation at max difficulty
+const PIPE_CAP_HEIGHT = 20; // Height of pipe cap (pixels)
 const BIRD_SIZE = 72; // Doubled from 36 for better visibility
 const BIRD_START_X = 100;
 const BIRD_HITBOX_RADIUS = BIRD_SIZE * 0.30; // Smaller hitbox for fairer collisions (30% of sprite size - reduced from 45%)
 const SHOW_COLLISION_DEBUG = false; // Set to true to visualize collision boxes
+
+// Progressive difficulty constants
+const PROGRESSION_SCORE_THRESHOLD = 30; // Score at which difficulty reaches max (tune this)
+const MAX_GAP_DELTA = 110; // Maximum vertical gap movement between pipes at max difficulty
+const MIN_GAP_DELTA = 70; // Minimum vertical gap movement at start
 
 // Assist curve constants (early game only)
 const ASSIST_SCORE_THRESHOLD = 10;
@@ -65,6 +75,9 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
   const animationFrameRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
   const birdImageRef = useRef<HTMLImageElement | null>(null);
+  const backgroundImageRef = useRef<HTMLImageElement | null>(null);
+  const backgroundLoadedRef = useRef<boolean>(false);
+  const backgroundOffsetRef = useRef<number>(0); // For subtle parallax drift
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioUnlockedRef = useRef<boolean>(false);
 
@@ -99,6 +112,21 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
     };
     img.onerror = () => {
       console.warn('Failed to load bird image');
+    };
+  }, []);
+
+  // Load background image
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/flappywingbackground.png';
+    img.onload = () => {
+      backgroundImageRef.current = img;
+      backgroundLoadedRef.current = true;
+      drawCanvas(); // Redraw when image loads
+    };
+    img.onerror = () => {
+      console.warn('Failed to load background image, using fallback color');
+      backgroundLoadedRef.current = false;
     };
   }, []);
 
@@ -267,20 +295,63 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
     }
   }, [soundEnabled]);
 
-  // Generate new pipe
-  const generatePipe = useCallback((): Pipe => {
-    const minTopHeight = 100; // Increased minimum to ensure fair gaps
-    const maxTopHeight = gameHeightRef.current - PIPE_GAP - 100; // Increased margin
-    const topHeight = Math.random() * (maxTopHeight - minTopHeight) + minTopHeight;
+  // Helper: Linear interpolation
+  const lerp = useCallback((a: number, b: number, t: number): number => {
+    return a + (b - a) * t;
+  }, []);
+
+  // Helper: Ease in-out quad for smooth difficulty curve
+  const easeInOutQuad = useCallback((t: number): number => {
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  }, []);
+
+  // Generate new pipe with progressive difficulty
+  const generatePipe = useCallback((currentScore: number, previousPipe?: Pipe): Pipe => {
+    // Calculate progress factor (0 to 1)
+    const progress = Math.min(currentScore / PROGRESSION_SCORE_THRESHOLD, 1);
+    const easedProgress = easeInOutQuad(progress);
+
+    // Calculate gap size (decreases with progress)
+    const gap = lerp(BASE_PIPE_GAP, MIN_PIPE_GAP, easedProgress);
+
+    // Calculate pipe width variation (increases with progress)
+    const widthVariation = lerp(0, MAX_PIPE_WIDTH_VARIATION, easedProgress);
+    const width = BASE_PIPE_WIDTH + (Math.random() - 0.5) * 2 * widthVariation;
+
+    // Calculate cap height variation (slight variation for visual interest)
+    const capHeight = PIPE_CAP_HEIGHT + (Math.random() - 0.5) * 4 * easedProgress;
+
+    // Calculate gap position with fairness constraints
+    const minTopHeight = 100;
+    const maxTopHeight = gameHeightRef.current - gap - 100;
+    
+    let topHeight: number;
+    if (previousPipe) {
+      // Limit vertical movement between pipes for fairness
+      const maxDelta = lerp(MIN_GAP_DELTA, MAX_GAP_DELTA, easedProgress);
+      const previousGapCenter = previousPipe.topHeight + previousPipe.gap / 2;
+      const minGapCenter = Math.max(minTopHeight + gap / 2, previousGapCenter - maxDelta);
+      const maxGapCenter = Math.min(maxTopHeight - gap / 2, previousGapCenter + maxDelta);
+      const gapCenter = minGapCenter + Math.random() * (maxGapCenter - minGapCenter);
+      topHeight = gapCenter - gap / 2;
+    } else {
+      // First pipe: random position
+      topHeight = minTopHeight + Math.random() * (maxTopHeight - minTopHeight);
+    }
+
+    // Clamp to ensure gap doesn't clip ground/top
+    topHeight = Math.max(minTopHeight, Math.min(maxTopHeight, topHeight));
     
     return {
       x: gameWidthRef.current,
       topHeight,
-      bottomY: topHeight + PIPE_GAP,
-      gap: PIPE_GAP,
+      bottomY: topHeight + gap,
+      gap,
+      width,
+      capHeight: Math.max(10, capHeight), // Ensure minimum cap height
       passed: false,
     };
-  }, []);
+  }, [lerp, easeInOutQuad]);
 
   // Check collision using circle hitbox for bird
   const checkCollision = useCallback((birdX: number, birdY: number): boolean => {
@@ -293,12 +364,12 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
 
     // Pipe collision - use circle-rectangle collision for fairer detection
     for (const pipe of pipesRef.current) {
-      // Check if bird circle overlaps with pipe rectangle
+      // Check if bird circle overlaps with pipe rectangle (use actual pipe width)
       const pipeLeft = pipe.x;
-      const pipeRight = pipe.x + PIPE_WIDTH;
+      const pipeRight = pipe.x + pipe.width;
       const pipeTopBottom = pipe.topHeight;
       const pipeBottomTop = pipe.bottomY;
-
+      
       // Check if bird is horizontally overlapping with pipe
       const horizontalOverlap = birdX + BIRD_HITBOX_RADIUS > pipeLeft && birdX - BIRD_HITBOX_RADIUS < pipeRight;
       
@@ -385,9 +456,12 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
     const velocityRatio = birdVelocityRef.current / MAX_FALL_SPEED;
     birdRotationRef.current = Math.max(-30, Math.min(30, velocityRatio * 30));
 
-    // Spawn pipes
+    // Spawn pipes with progressive difficulty
     if (timestamp - lastPipeSpawnRef.current > PIPE_SPAWN_INTERVAL) {
-      pipesRef.current.push(generatePipe());
+      const previousPipe = pipesRef.current.length > 0 
+        ? pipesRef.current[pipesRef.current.length - 1] 
+        : undefined;
+      pipesRef.current.push(generatePipe(score, previousPipe));
       lastPipeSpawnRef.current = timestamp;
     }
 
@@ -397,12 +471,12 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
       x: pipe.x - PIPE_SPEED * dt,
     }));
 
-    // Remove off-screen pipes
-    pipesRef.current = pipesRef.current.filter((pipe) => pipe.x + PIPE_WIDTH > 0);
+    // Remove off-screen pipes (use actual pipe width)
+    pipesRef.current = pipesRef.current.filter((pipe) => pipe.x + pipe.width > 0);
 
-    // Check score (pipe passed)
+    // Check score (pipe passed) - use actual pipe width
     pipesRef.current.forEach((pipe) => {
-      if (!pipe.passed && pipe.x + PIPE_WIDTH < BIRD_START_X - BIRD_SIZE / 2) {
+      if (!pipe.passed && pipe.x + pipe.width < BIRD_START_X - BIRD_SIZE / 2) {
         pipe.passed = true;
         const newScore = score + 1;
         setScore(newScore);
@@ -435,6 +509,77 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
     animationFrameRef.current = requestAnimationFrame(gameLoop);
   }, [gameState, score, bestScore, checkCollision, generatePipe, onScore, onGameOver, playCollisionSound]);
 
+  // Draw pipe with depth and shading
+  const drawPipe = useCallback((
+    ctx: CanvasRenderingContext2D,
+    pipe: Pipe,
+    x: number,
+    y: number,
+    height: number,
+    isTop: boolean,
+    displayHeight: number
+  ) => {
+    const width = pipe.width;
+    const capHeight = pipe.capHeight;
+
+    // Draw pipe shadow (subtle, offset 2-4px)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    ctx.fillRect(x + 3, y + 3, width, height);
+
+    // Draw pipe body with gradient
+    const gradient = ctx.createLinearGradient(x, y, x + width, y);
+    gradient.addColorStop(0, '#1a5f1a'); // Darker edge
+    gradient.addColorStop(0.5, '#2d8f2d'); // Lighter center
+    gradient.addColorStop(1, '#1a5f1a'); // Darker edge
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x, y, width, height);
+
+    // Draw pipe cap
+    const capY = isTop ? y + height - capHeight : y;
+    const capGradient = ctx.createLinearGradient(x, capY, x, capY + capHeight);
+    if (isTop) {
+      // Top pipe cap: darker on bottom (underside)
+      capGradient.addColorStop(0, '#2d8f2d');
+      capGradient.addColorStop(1, '#1a5f1a');
+    } else {
+      // Bottom pipe cap: darker on top (underside)
+      capGradient.addColorStop(0, '#1a5f1a');
+      capGradient.addColorStop(1, '#2d8f2d');
+    }
+    ctx.fillStyle = capGradient;
+    ctx.fillRect(x, capY, width, capHeight);
+
+    // Draw highlight on left edge
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x + 1, y);
+    ctx.lineTo(x + 1, y + height);
+    ctx.stroke();
+
+    // Draw shadow on right edge
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x + width - 1, y);
+    ctx.lineTo(x + width - 1, y + height);
+    ctx.stroke();
+
+    // Draw cap highlight/shadow
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (isTop) {
+      ctx.moveTo(x, y + height - capHeight);
+      ctx.lineTo(x + width, y + height - capHeight);
+    } else {
+      ctx.moveTo(x, y + capHeight);
+      ctx.lineTo(x + width, y + capHeight);
+    }
+    ctx.stroke();
+  }, []);
+
   // Draw canvas
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -464,9 +609,45 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
       birdYRef.current = displayHeight / 2;
     }
 
-    // Clear canvas
-    ctx.fillStyle = '#87CEEB'; // Sky blue
-    ctx.fillRect(0, 0, displayWidth, displayHeight);
+    // Draw background image with cover behavior
+    if (backgroundLoadedRef.current && backgroundImageRef.current) {
+      const bgImg = backgroundImageRef.current;
+      const imgAspect = bgImg.width / bgImg.height;
+      const canvasAspect = displayWidth / displayHeight;
+      
+      let drawWidth: number, drawHeight: number, dx: number, dy: number;
+      
+      if (imgAspect > canvasAspect) {
+        // Image is wider - fit to height
+        drawHeight = displayHeight;
+        drawWidth = drawHeight * imgAspect;
+        dx = (displayWidth - drawWidth) / 2 + backgroundOffsetRef.current;
+        dy = 0;
+      } else {
+        // Image is taller - fit to width
+        drawWidth = displayWidth;
+        drawHeight = drawWidth / imgAspect;
+        dx = backgroundOffsetRef.current;
+        dy = (displayHeight - drawHeight) / 2;
+      }
+      
+      // Subtle horizontal drift for parallax effect (loops seamlessly)
+      backgroundOffsetRef.current += 0.15; // Very subtle drift
+      if (backgroundOffsetRef.current > drawWidth) {
+        backgroundOffsetRef.current = -drawWidth;
+      }
+      
+      ctx.drawImage(bgImg, dx, dy, drawWidth, drawHeight);
+      
+      // Draw again if needed for seamless loop
+      if (dx < 0) {
+        ctx.drawImage(bgImg, dx + drawWidth, dy, drawWidth, drawHeight);
+      }
+    } else {
+      // Fallback: solid color background
+      ctx.fillStyle = '#87CEEB'; // Sky blue
+      ctx.fillRect(0, 0, displayWidth, displayHeight);
+    }
 
     // Draw ground
     ctx.fillStyle = '#8B4513'; // Brown
@@ -474,30 +655,36 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
     ctx.fillStyle = '#90EE90'; // Light green
     ctx.fillRect(0, displayHeight - 40, displayWidth, 10);
 
-    // Draw pipes
-    ctx.fillStyle = '#228B22'; // Forest green
-    ctx.strokeStyle = '#006400'; // Dark green
-    ctx.lineWidth = 3;
-
+    // Draw pipes with enhanced visuals
     pipesRef.current.forEach((pipe) => {
-      // Top pipe
-      ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
-      ctx.strokeRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
+      // Top pipe body (above cap)
+      const topBodyHeight = pipe.topHeight - pipe.capHeight;
+      if (topBodyHeight > 0) {
+        drawPipe(ctx, pipe, pipe.x, 0, topBodyHeight, true, displayHeight);
+      }
+      // Top pipe cap
+      if (pipe.capHeight > 0) {
+        drawPipe(ctx, pipe, pipe.x, pipe.topHeight - pipe.capHeight, pipe.capHeight, true, displayHeight);
+      }
 
-      // Bottom pipe
-      ctx.fillRect(pipe.x, pipe.bottomY, PIPE_WIDTH, displayHeight - pipe.bottomY);
-      ctx.strokeRect(pipe.x, pipe.bottomY, PIPE_WIDTH, displayHeight - pipe.bottomY);
+      // Bottom pipe cap
+      if (pipe.capHeight > 0) {
+        drawPipe(ctx, pipe, pipe.x, pipe.bottomY, pipe.capHeight, false, displayHeight);
+      }
+      // Bottom pipe body (below cap)
+      const bottomBodyHeight = displayHeight - pipe.bottomY - pipe.capHeight;
+      if (bottomBodyHeight > 0) {
+        drawPipe(ctx, pipe, pipe.x, pipe.bottomY + pipe.capHeight, bottomBodyHeight, false, displayHeight);
+      }
 
       // Debug: Draw collision boxes
       if (SHOW_COLLISION_DEBUG) {
         ctx.strokeStyle = '#FF0000'; // Red for collision boxes
         ctx.lineWidth = 2;
         // Top pipe collision box
-        ctx.strokeRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
+        ctx.strokeRect(pipe.x, 0, pipe.width, pipe.topHeight);
         // Bottom pipe collision box
-        ctx.strokeRect(pipe.x, pipe.bottomY, PIPE_WIDTH, displayHeight - pipe.bottomY);
-        ctx.strokeStyle = '#006400'; // Reset to dark green
-        ctx.lineWidth = 3;
+        ctx.strokeRect(pipe.x, pipe.bottomY, pipe.width, displayHeight - pipe.bottomY);
       }
     });
 
@@ -532,7 +719,7 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
     }
 
     ctx.restore();
-  }, []);
+  }, [drawPipe]);
 
   // Start game loop when running
   useEffect(() => {
@@ -696,7 +883,7 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
                 <div>velY: {debugInfo.velY} px/s</div>
                 <div>gravity: {GRAVITY} px/s²</div>
                 <div>flapVel: {FLAP_VELOCITY} px/s</div>
-                <div>gap: {PIPE_GAP}px</div>
+                <div>gap: {BASE_PIPE_GAP}px (base)</div>
               </div>
             )}
           </div>
