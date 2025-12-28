@@ -604,7 +604,7 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
                 marginBottom: 'clamp(8px, 1.5vw, 16px)',
               }}
             >
-              🍗
+              🐦
             </div>
             <div
               style={{

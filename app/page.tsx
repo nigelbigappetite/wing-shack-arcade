@@ -62,7 +62,7 @@ const games: Game[] = [
     description: 'TAP TO FLY. DON\'T CLIP THE PIPES.',
     href: '/flappy-wing',
     color: '#FF8C00',
-    icon: '🍗',
+    icon: '🐦',
     category: 'Arcade',
   },
 ];
