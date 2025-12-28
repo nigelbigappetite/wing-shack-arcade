@@ -201,7 +201,7 @@ export default function Home() {
                     }}
                     transition={{ duration: 0.3 }}
                     style={{
-                      fontSize: 'clamp(80px, 12vw, 120px)',
+                      fontSize: 'clamp(100px, 15vw, 150px)',
                       lineHeight: 1,
                       filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
                       marginTop: 'clamp(8px, 1.5vw, 16px)',
@@ -223,7 +223,7 @@ export default function Home() {
                           ease: 'easeInOut',
                         }}
                         style={{
-                          fontSize: 'clamp(80px, 12vw, 120px)',
+                          fontSize: 'clamp(100px, 15vw, 150px)',
                           lineHeight: 1,
                           filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
                           display: 'flex',
