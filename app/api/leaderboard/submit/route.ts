@@ -165,6 +165,13 @@ export async function POST(request: NextRequest) {
 
     // Insert into database
     const supabase = getSupabaseClient();
+    
+    console.log('📝 Submitting score:', {
+      game_id,
+      player_name: player_name.trim(),
+      score,
+    });
+    
     const { data, error } = await supabase
       .from('scores')
       .insert({
@@ -174,6 +181,12 @@ export async function POST(request: NextRequest) {
       } as any)
       .select()
       .single();
+    
+    console.log('📝 Insert result:', {
+      success: !!data,
+      data: data,
+      error: error ? JSON.stringify(error, null, 2) : null,
+    });
 
     if (error) {
       console.error('Supabase insert error:', JSON.stringify(error, null, 2));

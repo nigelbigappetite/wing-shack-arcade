@@ -47,6 +47,17 @@ export async function GET(request: NextRequest) {
       data: allData,
       error: allError ? JSON.stringify(allError, null, 2) : null
     });
+    
+    // Log game_id distribution for debugging
+    if (allData && allData.length > 0) {
+      const gameIdCounts: Record<string, number> = {};
+      allData.forEach((row: any) => {
+        const gid = row.game_id || 'unknown';
+        gameIdCounts[gid] = (gameIdCounts[gid] || 0) + 1;
+      });
+      console.log('📊 Game ID distribution:', gameIdCounts);
+      console.log(`📊 Records with game_id='${gameId}':`, allData.filter((row: any) => row.game_id === gameId).length);
+    }
 
     // Now fetch with filter - try multiple approaches
     console.log('🔍 Attempting filtered query with .eq()');
