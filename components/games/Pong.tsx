@@ -26,7 +26,7 @@ const AI_PADDLE_SPEED = 250; // px/s - AI paddle max speed (slightly slower for 
 const AI_REACTION_DELAY = 150; // ms - AI reaction lag
 const WIN_SCORE = 7; // First to 7 wins
 const COURT_MARGIN = 20; // pixels - margin from edges
-const COUNTDOWN_DURATION = 1000; // ms - 1 second per countdown number (3 seconds total)
+const COUNTDOWN_DURATION = 1000; // ms - 1 second per countdown number (5 seconds total: 5->4->3->2->1)
 const TRACKPAD_BUTTON_SIZE = 64; // px - minimum 56px, prefer 64px
 const TRACKPAD_BUTTON_SPACING = 16; // px - spacing between buttons
 const TRACKPAD_TAP_NUDGE = 24; // px - distance paddle moves on tap
@@ -38,7 +38,6 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
   const [aiScore, setAiScore] = useState(0);
   const [roundCountdown, setRoundCountdown] = useState<number | null>(null);
   const [controlMode, setControlMode] = useState<'touch' | 'trackpad'>('touch');
-  const [muteSound, setMuteSound] = useState(false);
   const [trackpadUpPressed, setTrackpadUpPressed] = useState(false);
   const [trackpadDownPressed, setTrackpadDownPressed] = useState(false);
 
@@ -99,7 +98,7 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
 
   // Play sound effect
   const playSound = useCallback((sound: 'win' | 'loss') => {
-    if (muteSound || !soundEnabled || !audioUnlockedRef.current) return;
+    if (!soundEnabled || !audioUnlockedRef.current) return;
     
     try {
       const audio = sound === 'win' ? pointWinAudioRef.current : pointLossAudioRef.current;
@@ -112,7 +111,7 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
     } catch (error) {
       console.warn('Error playing sound:', error);
     }
-  }, [muteSound, soundEnabled]);
+  }, [soundEnabled]);
 
   // Reset game
   const resetGame = useCallback(() => {
@@ -369,7 +368,7 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
         onGameOver?.('ai');
       } else {
         setGameState('roundReset');
-        setRoundCountdown(3);
+        setRoundCountdown(5); // 5 second countdown: 5->4->3->2->1
       }
       onScore?.(playerScore, newAiScore);
     } else if (ballXRef.current > gameWidthRef.current) {
@@ -382,7 +381,7 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
         onGameOver?.('player');
       } else {
         setGameState('roundReset');
-        setRoundCountdown(3);
+        setRoundCountdown(5); // 5 second countdown: 5->4->3->2->1
       }
       onScore?.(newPlayerScore, aiScore);
     }
@@ -514,27 +513,25 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, [drawCanvas]);
 
-  // Handle round reset countdown (exactly 3 seconds: 3 -> 2 -> 1 -> play)
+  // Handle round reset countdown (exactly 5 seconds: 5 -> 4 -> 3 -> 2 -> 1 -> play)
   useEffect(() => {
-    if (gameState === 'roundReset' && roundCountdown !== null) {
-      if (roundCountdown <= 0) {
-        setRoundCountdown(null);
-        resetBall();
-        setGameState('running');
-      } else {
-        // Each countdown number lasts exactly 1 second
-        const timer = setTimeout(() => {
-          setRoundCountdown((prev) => {
-            if (prev === null || prev <= 1) {
-              return null;
-            }
-            return prev - 1;
-          });
-        }, COUNTDOWN_DURATION);
-        return () => clearTimeout(timer);
-      }
-    } else {
-      // Clear countdown if game state changes
+    if (gameState === 'roundReset' && roundCountdown !== null && roundCountdown > 0) {
+      // Each countdown number lasts exactly 1 second
+      const timer = setTimeout(() => {
+        setRoundCountdown((prev) => {
+          if (prev === null || prev <= 1) {
+            // Countdown finished, start new round
+            setRoundCountdown(null);
+            resetBall();
+            setGameState('running');
+            return null;
+          }
+          return prev - 1;
+        });
+      }, COUNTDOWN_DURATION);
+      return () => clearTimeout(timer);
+    } else if (gameState !== 'roundReset') {
+      // Clear countdown if game state changes away from roundReset
       setRoundCountdown(null);
     }
   }, [gameState, roundCountdown, resetBall]);
@@ -595,75 +592,18 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
         style={{
           width: '100%',
           height: '100%',
-          minHeight: 'clamp(400px, 60vh, 600px)',
+          maxHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'flex-start',
           position: 'relative',
           overflow: 'hidden', // Prevent scrolling
-          paddingTop: 'clamp(8px, 1.5vw, 12px)',
+          boxSizing: 'border-box',
         }}
         data-game-lifecycle="true"
       >
-        {/* Control Mode Toggle & Mute Button */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 'clamp(8px, 1.5vw, 12px)',
-            right: 'clamp(8px, 1.5vw, 12px)',
-            display: 'flex',
-            gap: 'clamp(8px, 1.5vw, 12px)',
-            zIndex: 10,
-          }}
-        >
-          {/* Mute Toggle */}
-          <motion.button
-            onClick={() => setMuteSound(!muteSound)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            style={{
-              width: 'clamp(36px, 5vw, 44px)',
-              height: 'clamp(36px, 5vw, 44px)',
-              borderRadius: '50%',
-              border: 'none',
-              backgroundColor: muteSound ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.8)',
-              color: muteSound ? '#ffffff' : '#000000',
-              fontSize: 'clamp(18px, 2.5vw, 22px)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-            }}
-          >
-            {muteSound ? '🔇' : '🔊'}
-          </motion.button>
-
-          {/* Control Mode Toggle */}
-          <motion.button
-            onClick={() => setControlMode(controlMode === 'touch' ? 'trackpad' : 'touch')}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            style={{
-              padding: 'clamp(6px, 1vw, 8px) clamp(12px, 2vw, 16px)',
-              borderRadius: wingShackTheme.borderRadius.md,
-              border: 'none',
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-              color: '#000000',
-              fontFamily: wingShackTheme.typography.fontFamily.body,
-              fontSize: 'clamp(11px, 1.5vw, 13px)',
-              fontWeight: wingShackTheme.typography.fontWeight.semibold,
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {controlMode === 'touch' ? '👆 Touch' : '🎮 Trackpad'}
-          </motion.button>
-        </div>
-
-        {/* Canvas */}
+        {/* Canvas - Fixed size, doesn't change */}
         <canvas
           ref={canvasRef}
           onTouchStart={handleTouchStart}
@@ -674,8 +614,9 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
           style={{
             width: '100%',
             maxWidth: 'clamp(320px, 90vw, 600px)',
-            maxHeight: controlMode === 'trackpad' ? 'calc(100vh - clamp(200px, 25vh, 250px))' : 'calc(100vh - clamp(40px, 5vh, 60px))',
-            aspectRatio: controlMode === 'trackpad' ? undefined : '3/4',
+            height: controlMode === 'trackpad' 
+              ? 'clamp(300px, 50vh, 450px)' 
+              : 'clamp(400px, 60vh, 600px)',
             display: 'block',
             borderRadius: wingShackTheme.borderRadius.md,
             border: `2px solid ${wingShackTheme.colors.primary}40`,
@@ -683,6 +624,39 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
             flexShrink: 0,
           }}
         />
+
+        {/* Control Mode Toggle - Fixed position below canvas */}
+        <div
+          style={{
+            marginTop: 'clamp(8px, 1.5vw, 12px)',
+            width: '100%',
+            maxWidth: 'clamp(320px, 90vw, 600px)',
+            display: 'flex',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <motion.button
+            onClick={() => setControlMode(controlMode === 'touch' ? 'trackpad' : 'touch')}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{
+              padding: 'clamp(8px, 1.5vw, 12px) clamp(16px, 3vw, 24px)',
+              borderRadius: wingShackTheme.borderRadius.md,
+              border: 'none',
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              color: wingShackTheme.colors.primary,
+              fontFamily: wingShackTheme.typography.fontFamily.body,
+              fontSize: 'clamp(12px, 2vw, 14px)',
+              fontWeight: wingShackTheme.typography.fontWeight.semibold,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {controlMode === 'touch' ? '👆 Touch Mode' : '🎮 Trackpad Mode'}
+          </motion.button>
+        </div>
 
         {/* Trackpad Controls */}
         {controlMode === 'trackpad' && (
@@ -692,10 +666,11 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
               flexDirection: 'column',
               alignItems: 'center',
               gap: `${TRACKPAD_BUTTON_SPACING}px`,
-              marginTop: 'clamp(12px, 2vw, 16px)',
-              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+              marginTop: 'clamp(8px, 1.5vw, 12px)',
+              paddingBottom: 'env(safe-area-inset-bottom, clamp(8px, 1.5vw, 12px))',
               width: '100%',
               maxWidth: 'clamp(320px, 90vw, 600px)',
+              flexShrink: 0,
             }}
           >
             {/* Up Button */}
