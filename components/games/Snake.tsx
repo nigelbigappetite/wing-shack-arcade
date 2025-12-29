@@ -434,33 +434,44 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
       console.warn('AudioContext not supported:', error);
     }
 
-    // Unlock audio on first user interaction
+    // Unlock audio on first user interaction (iOS-compatible)
     const unlockAudio = async () => {
       if (!audioUnlockedRef.current && audioContextRef.current) {
         try {
-          // Resume audio context (required for mobile browsers)
+          // Resume audio context (required for mobile browsers, especially iOS)
           if (audioContextRef.current.state === 'suspended') {
             await audioContextRef.current.resume();
           }
-          // Play a silent sound to unlock
+          
+          // For iOS Safari, we need to actually play a sound, not just a silent one
+          // Create a very short, quiet beep to unlock audio
           const oscillator = audioContextRef.current.createOscillator();
           const gainNode = audioContextRef.current.createGain();
-          gainNode.gain.value = 0;
+          
+          // Very quiet but not silent (iOS requires actual audio)
+          gainNode.gain.setValueAtTime(0.001, audioContextRef.current.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, audioContextRef.current.currentTime + 0.01);
+          
+          oscillator.frequency.setValueAtTime(200, audioContextRef.current.currentTime);
           oscillator.connect(gainNode);
           gainNode.connect(audioContextRef.current.destination);
-          oscillator.start();
-          oscillator.stop(audioContextRef.current.currentTime + 0.001);
+          oscillator.start(audioContextRef.current.currentTime);
+          oscillator.stop(audioContextRef.current.currentTime + 0.01);
+          
           audioUnlockedRef.current = true;
         } catch (error) {
-          // Silent fail
+          // Silent fail - will try again on next interaction
         }
       }
       document.removeEventListener('click', unlockAudio);
       document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('pointerdown', unlockAudio);
     };
 
     document.addEventListener('click', unlockAudio, { once: true });
     document.addEventListener('touchstart', unlockAudio, { once: true });
+    // Also try on tap/pointer events for better mobile support
+    document.addEventListener('pointerdown', unlockAudio, { once: true });
 
     return () => {
       document.removeEventListener('click', unlockAudio);

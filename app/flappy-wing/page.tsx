@@ -159,8 +159,13 @@ export default function FlappyWingPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              zIndex: 1000,
+              zIndex: 9999,
               padding: 'clamp(16px, 3vw, 24px)',
+              pointerEvents: 'auto',
+            }}
+            onClick={(e) => {
+              // Prevent closing on overlay click, only on button
+              e.stopPropagation();
             }}
           >
             <motion.div

@@ -22,9 +22,12 @@ const BALL_SPEED_BASE = 200; // px/s - base ball speed
 const BALL_SPEED_MAX = 400; // px/s - maximum ball speed
 const BALL_SPEED_INCREASE = 15; // px/s increase per paddle hit
 const PADDLE_SPEED = 300; // px/s - player paddle speed
-const AI_PADDLE_SPEED = 180; // px/s - AI paddle max speed (reduced for easier gameplay)
-const AI_REACTION_DELAY = 280; // ms - AI reaction lag (increased for easier gameplay)
-const AI_ACCURACY = 0.85; // 0-1, lower = less accurate (AI aims slightly off-center)
+const AI_PADDLE_SPEED_HARD = 180; // px/s - AI paddle max speed (hard mode)
+const AI_PADDLE_SPEED_EASY = 120; // px/s - AI paddle max speed (easy mode)
+const AI_REACTION_DELAY_HARD = 280; // ms - AI reaction lag (hard mode)
+const AI_REACTION_DELAY_EASY = 400; // ms - AI reaction lag (easy mode)
+const AI_ACCURACY_HARD = 0.85; // 0-1, lower = less accurate (hard mode)
+const AI_ACCURACY_EASY = 0.70; // 0-1, lower = less accurate (easy mode)
 const WIN_SCORE = 7; // First to 7 wins
 const COURT_MARGIN = 20; // pixels - margin from edges
 const COUNTDOWN_DURATION = 1000; // ms - 1 second per countdown number (5 seconds total: 5->4->3->2->1)
@@ -39,6 +42,7 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
   const [aiScore, setAiScore] = useState(0);
   const [roundCountdown, setRoundCountdown] = useState<number | null>(null);
   const [controlMode, setControlMode] = useState<'touch' | 'trackpad'>('touch');
+  const [difficulty, setDifficulty] = useState<'easy' | 'hard'>('hard');
   const [trackpadUpPressed, setTrackpadUpPressed] = useState(false);
   const [trackpadDownPressed, setTrackpadDownPressed] = useState(false);
 
@@ -73,6 +77,7 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
   const audioUnlockedRef = useRef<boolean>(false);
   const pointWinAudioRef = useRef<HTMLAudioElement | null>(null);
   const pointLossAudioRef = useRef<HTMLAudioElement | null>(null);
+  const soundPlayingRef = useRef<boolean>(false); // Prevent overlapping sounds
 
   // Unlock audio on first interaction
   const unlockAudio = useCallback(async () => {
@@ -119,7 +124,7 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
 
   // Play sound effect
   const playSound = useCallback(async (sound: 'win' | 'loss') => {
-    if (!soundEnabled) return;
+    if (!soundEnabled || soundPlayingRef.current) return; // Prevent overlapping
     
     // Ensure audio is unlocked
     if (!audioUnlockedRef.current) {
@@ -134,11 +139,23 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
       
       const audio = sound === 'win' ? pointWinAudioRef.current : pointLossAudioRef.current;
       if (audio) {
+        soundPlayingRef.current = true;
         audio.currentTime = 0; // Restart from beginning
         await audio.play();
+        
+        // Reset flag when sound ends
+        audio.onended = () => {
+          soundPlayingRef.current = false;
+        };
+        
+        // Also reset after a timeout as fallback
+        setTimeout(() => {
+          soundPlayingRef.current = false;
+        }, 2000);
       }
     } catch (error) {
       console.warn('Error playing sound:', error);
+      soundPlayingRef.current = false;
     }
   }, [soundEnabled, unlockAudio]);
 
@@ -314,12 +331,17 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
       }
     }
 
+    // Get difficulty-based constants
+    const aiReactionDelay = difficulty === 'easy' ? AI_REACTION_DELAY_EASY : AI_REACTION_DELAY_HARD;
+    const aiPaddleSpeed = difficulty === 'easy' ? AI_PADDLE_SPEED_EASY : AI_PADDLE_SPEED_HARD;
+    const aiAccuracy = difficulty === 'easy' ? AI_ACCURACY_EASY : AI_ACCURACY_HARD;
+
     // Update AI paddle (with reaction delay and inaccuracy)
     aiReactionTimerRef.current += dt * 1000;
-    if (aiReactionTimerRef.current >= AI_REACTION_DELAY) {
+    if (aiReactionTimerRef.current >= aiReactionDelay) {
       // Update target to track ball, but with some inaccuracy
       const perfectTarget = ballYRef.current;
-      const inaccuracyRange = PADDLE_HEIGHT * (1 - AI_ACCURACY);
+      const inaccuracyRange = PADDLE_HEIGHT * (1 - aiAccuracy);
       const inaccuracy = (Math.random() - 0.5) * inaccuracyRange;
       aiTargetYRef.current = perfectTarget + inaccuracy;
       aiReactionTimerRef.current = 0;
@@ -334,7 +356,7 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
       )
     );
     const aiDy = aiTargetY - aiPaddleYRef.current;
-    const aiMaxMove = AI_PADDLE_SPEED * dt;
+    const aiMaxMove = aiPaddleSpeed * dt;
     aiPaddleYRef.current += Math.max(-aiMaxMove, Math.min(aiMaxMove, aiDy));
 
     // Update ball position
@@ -430,7 +452,7 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
     drawCanvas();
 
     animationFrameRef.current = requestAnimationFrame(gameLoop);
-  }, [gameState, playerScore, aiScore, controlMode, onScore, onGameOver, resetBall, playSound]);
+  }, [gameState, playerScore, aiScore, controlMode, difficulty, onScore, onGameOver, resetBall, playSound]);
 
   // Draw canvas
   const drawCanvas = useCallback(() => {
@@ -873,18 +895,86 @@ const Pong: React.FC<PongProps> = ({ onScore, onGameOver }) => {
                 maxWidth: 'clamp(200px, 50vw, 300px)',
               }}
             >
-              <div
+            <div
+              style={{
+                fontFamily: wingShackTheme.typography.fontFamily.body,
+                fontSize: 'clamp(14px, 2vw, 16px)',
+                color: '#ffffff',
+                textAlign: 'center',
+                marginBottom: 'clamp(4px, 1vw, 8px)',
+                opacity: 0.9,
+              }}
+            >
+              Choose Difficulty:
+            </div>
+            
+            {/* Difficulty Selection */}
+            <div
+              style={{
+                display: 'flex',
+                gap: 'clamp(8px, 1.5vw, 12px)',
+                width: '100%',
+                maxWidth: 'clamp(200px, 50vw, 300px)',
+                marginBottom: 'clamp(12px, 2vw, 16px)',
+              }}
+            >
+              {/* Easy Mode Button */}
+              <motion.button
+                onClick={() => setDifficulty('easy')}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 style={{
+                  flex: 1,
+                  padding: 'clamp(10px, 2vw, 14px)',
+                  borderRadius: wingShackTheme.borderRadius.md,
+                  border: difficulty === 'easy' ? '2px solid #4ECDC4' : '2px solid rgba(255, 255, 255, 0.3)',
+                  backgroundColor: difficulty === 'easy' ? 'rgba(78, 205, 196, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+                  color: '#ffffff',
                   fontFamily: wingShackTheme.typography.fontFamily.body,
                   fontSize: 'clamp(14px, 2vw, 16px)',
-                  color: '#ffffff',
-                  textAlign: 'center',
-                  marginBottom: 'clamp(4px, 1vw, 8px)',
-                  opacity: 0.9,
+                  fontWeight: wingShackTheme.typography.fontWeight.semibold,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
                 }}
               >
-                Choose Control Mode:
-              </div>
+                😊 Easy
+              </motion.button>
+              
+              {/* Hard Mode Button */}
+              <motion.button
+                onClick={() => setDifficulty('hard')}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  flex: 1,
+                  padding: 'clamp(10px, 2vw, 14px)',
+                  borderRadius: wingShackTheme.borderRadius.md,
+                  border: difficulty === 'hard' ? '2px solid #4ECDC4' : '2px solid rgba(255, 255, 255, 0.3)',
+                  backgroundColor: difficulty === 'hard' ? 'rgba(78, 205, 196, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+                  color: '#ffffff',
+                  fontFamily: wingShackTheme.typography.fontFamily.body,
+                  fontSize: 'clamp(14px, 2vw, 16px)',
+                  fontWeight: wingShackTheme.typography.fontWeight.semibold,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                🔥 Hard
+              </motion.button>
+            </div>
+            
+            <div
+              style={{
+                fontFamily: wingShackTheme.typography.fontFamily.body,
+                fontSize: 'clamp(14px, 2vw, 16px)',
+                color: '#ffffff',
+                textAlign: 'center',
+                marginBottom: 'clamp(4px, 1vw, 8px)',
+                opacity: 0.9,
+              }}
+            >
+              Choose Control Mode:
+            </div>
               
               {/* Touch Mode Button */}
               <motion.button
