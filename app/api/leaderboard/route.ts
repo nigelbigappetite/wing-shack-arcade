@@ -8,10 +8,10 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const gameId = searchParams.get('game_id');
 
-    // Only allow snake and flappy-wing games
-    if (gameId !== 'snake' && gameId !== 'flappy-wing') {
+    // Only allow snake, flappy-wing, and sauce-simon games
+    if (gameId !== 'snake' && gameId !== 'flappy-wing' && gameId !== 'sauce-simon') {
       return NextResponse.json(
-        { error: 'Invalid game_id. Only "snake" and "flappy-wing" are allowed.' },
+        { error: 'Invalid game_id. Only "snake", "flappy-wing", and "sauce-simon" are allowed.' },
         { status: 400 }
       );
     }

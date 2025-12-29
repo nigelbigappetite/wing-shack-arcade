@@ -119,6 +119,7 @@ DELETE FROM public.scores WHERE player_name = 'Test Player';
 Currently supported game IDs:
 - `snake` - Snake game leaderboard
 - `flappy-wing` - Flappy Wing game leaderboard
+- `sauce-simon` - Sauce Simon game leaderboard (tracks rounds reached)
 
 ## Troubleshooting
 
@@ -141,7 +142,7 @@ Currently supported game IDs:
 
 **Check:**
 1. INSERT policy exists and allows public access
-2. The `game_id` being submitted is either 'snake' or 'flappy-wing'
+2. The `game_id` being submitted is either 'snake', 'flappy-wing', or 'sauce-simon'
 3. Score is a valid integer
 4. Player name meets validation (2-16 characters, alphanumeric + spaces)
 

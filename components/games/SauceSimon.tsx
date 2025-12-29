@@ -10,6 +10,7 @@ import { useGameShellContext } from '@/components/GameShell';
 
 interface SauceSimonProps {
   onScore?: (score: number) => void;
+  onGameOver?: (roundsReached: number) => void;
 }
 
 // Sauce configuration with xylophone note frequencies (in Hz)
@@ -24,7 +25,7 @@ const SAUCES = [
 const FLASH_DURATION = 500; // ms
 const FLASH_GAP = 300; // ms between flashes
 
-const SauceSimon: React.FC<SauceSimonProps> = ({ onScore }) => {
+const SauceSimon: React.FC<SauceSimonProps> = ({ onScore, onGameOver }) => {
   const { soundEnabled } = useGameShellContext();
   const [sequence, setSequence] = useState<string[]>([]);
   const [userInput, setUserInput] = useState<string[]>([]);
@@ -166,6 +167,8 @@ const SauceSimon: React.FC<SauceSimonProps> = ({ onScore }) => {
       setIsWaitingForInput(false);
       setShowGameOver(true);
       setActiveTile(null);
+      // Call onGameOver with rounds reached (currentRound is the round that was failed)
+      onGameOver?.(currentRound);
     }
   }, [isWaitingForInput, isPlayingSequence, sequence, userInput, currentRound, onScore, startRound]);
 

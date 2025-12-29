@@ -124,9 +124,9 @@ export async function POST(request: NextRequest) {
     const { game_id, player_name, score } = body;
 
     // Validate game_id
-    if (game_id !== 'snake' && game_id !== 'flappy-wing') {
+    if (game_id !== 'snake' && game_id !== 'flappy-wing' && game_id !== 'sauce-simon') {
       return NextResponse.json(
-        { error: 'Invalid game_id. Only "snake" and "flappy-wing" are allowed.' },
+        { error: 'Invalid game_id. Only "snake", "flappy-wing", and "sauce-simon" are allowed.' },
         { status: 400 }
       );
     }
