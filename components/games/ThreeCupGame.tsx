@@ -378,7 +378,17 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!isGameActive && !hasGuessed && !isShuffling && !showBallPlacement) {
+                setIsGameActive(true);
+                shuffleCups();
+              }
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               if (!isGameActive && !hasGuessed && !isShuffling && !showBallPlacement) {
                 setIsGameActive(true);
                 shuffleCups();
@@ -399,6 +409,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
               zIndex: 20,
               padding: 'clamp(20px, 4vw, 40px)',
               cursor: 'pointer',
+              touchAction: 'manipulation',
             }}
           >
             <div
