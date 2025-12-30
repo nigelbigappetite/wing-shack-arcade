@@ -378,6 +378,12 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            onClick={() => {
+              if (!isGameActive && !hasGuessed && !isShuffling && !showBallPlacement) {
+                setIsGameActive(true);
+                shuffleCups();
+              }
+            }}
             style={{
               position: 'absolute',
               top: 0,
@@ -392,6 +398,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               zIndex: 20,
               padding: 'clamp(20px, 4vw, 40px)',
+              cursor: 'pointer',
             }}
           >
             <div
@@ -414,7 +421,7 @@ const ThreeCupGame: React.FC<ThreeCupGameProps> = ({ onWin }) => {
                 maxWidth: '400px',
               }}
             >
-              Press start and follow the ball.
+              Tap to start! Follow the ball.
             </div>
           </motion.div>
         )}
