@@ -1068,6 +1068,16 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              flap();
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              flap();
+            }}
             style={{
               position: 'absolute',
               top: 0,
@@ -1083,6 +1093,8 @@ const FlappyWing: React.FC<FlappyWingProps> = ({ onScore, onGameOver }) => {
               zIndex: 15,
               padding: 'clamp(20px, 4vw, 40px)',
               borderRadius: 0,
+              touchAction: 'manipulation',
+              cursor: 'pointer',
             }}
           >
             <div
