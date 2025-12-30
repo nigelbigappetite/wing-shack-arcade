@@ -249,7 +249,7 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
                     e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
                   }}
                 >
-                  🏠 Home
+                  Home
                 </button>
               </Link>
 
@@ -287,7 +287,7 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
                   }
                 }}
               >
-                {showHowToPlay ? '✕ Close' : 'ℹ️ How to Play'}
+                {showHowToPlay ? '✕ Close' : 'How to Play'}
               </button>
 
               {/* Leaderboard Button - Show for Snake, Flappy Wing, and Sauce Simon games */}
@@ -332,7 +332,7 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
                       e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
                     }}
                   >
-                    🏆 Leaderboard
+                    Leaderboard
                   </button>
                 </Link>
               )}
