@@ -545,6 +545,11 @@ const SauceSimon: React.FC<SauceSimonProps> = ({ onScore, onGameOver }) => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            onClick={() => {
+              if (currentRound === 0 && !showGameOver) {
+                startGame();
+              }
+            }}
             style={{
               position: 'absolute',
               top: 0,
@@ -559,6 +564,7 @@ const SauceSimon: React.FC<SauceSimonProps> = ({ onScore, onGameOver }) => {
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               zIndex: 15,
               padding: 'clamp(20px, 4vw, 40px)',
+              cursor: 'pointer',
             }}
           >
             <div
@@ -589,7 +595,7 @@ const SauceSimon: React.FC<SauceSimonProps> = ({ onScore, onGameOver }) => {
                 maxWidth: '400px',
               }}
             >
-              Press Start to begin!
+              Tap to start!
             </div>
           </motion.div>
         )}

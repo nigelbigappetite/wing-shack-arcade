@@ -1016,6 +1016,11 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            onClick={() => {
+              if (!isGameActive && !gameEnded) {
+                startGame();
+              }
+            }}
             style={{
               position: 'absolute',
               top: 0,
@@ -1031,6 +1036,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
               zIndex: 15,
               padding: 'clamp(20px, 4vw, 40px)',
               borderRadius: 0,
+              cursor: 'pointer',
             }}
           >
             <div
@@ -1061,7 +1067,7 @@ const WingTapFrenzy: React.FC<WingTapFrenzyProps> = ({ onScore }) => {
                 maxWidth: '400px',
               }}
             >
-              Tap as many wings as you can in 10 seconds!
+              Tap to start! Tap as many wings as you can in 10 seconds!
             </div>
           </motion.div>
         )}

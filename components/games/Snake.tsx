@@ -1049,6 +1049,11 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            onClick={() => {
+              if (gameState === 'idle') {
+                startGame();
+              }
+            }}
             style={{
               position: 'absolute',
               top: 0,
@@ -1064,6 +1069,7 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
               zIndex: 15,
               padding: isTouchDevice ? 'clamp(20px, 4vw, 40px)' : 'clamp(12px, 2vw, 20px)',
               borderRadius: 0,
+              cursor: 'pointer',
             }}
           >
             <div
@@ -1094,7 +1100,7 @@ const Snake: React.FC<SnakeProps> = ({ onScore, onGameOver }) => {
                 maxWidth: '400px',
               }}
             >
-              Press Start to begin!
+              Tap to start!
             </div>
           </motion.div>
         )}

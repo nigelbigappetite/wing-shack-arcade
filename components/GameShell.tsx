@@ -403,36 +403,8 @@ const GameShell = forwardRef<GameShellRef, GameShellProps>(
                 </button>
               )}
 
-              {/* Start/Reset Button */}
-              {!isPlaying ? (
-                <button
-                  onClick={handleStart}
-                  style={{
-                    padding: 'clamp(8px, 1.5vw, 10px) clamp(16px, 3vw, 20px)',
-                    backgroundColor: wingShackTheme.colors.primary,
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: wingShackTheme.borderRadius.md,
-                    cursor: 'pointer',
-                    fontSize: 'clamp(12px, 2.5vw, 14px)',
-                    fontWeight: wingShackTheme.typography.fontWeight.bold,
-                    fontFamily: wingShackTheme.typography.fontFamily.body,
-                    transition: 'all 0.2s ease',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 2px 8px rgba(159, 8, 8, 0.3)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(159, 8, 8, 0.4)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(159, 8, 8, 0.3)';
-                  }}
-                >
-                  Start
-                </button>
-              ) : (
+              {/* Reset Button - Only show when game is playing */}
+              {isPlaying && (
                 <button
                   onClick={handleReset}
                   style={{
